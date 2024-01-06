@@ -23,5 +23,16 @@ namespace FileDB.Function
                 default: return TypeValue.None;
             }
         }
+        public static bool IsDefaultValue(System.Type typeIn)
+        {
+            switch (true)
+            {
+                case bool _ when typeIn == typeof(string): return true;
+                case bool _ when typeIn == typeof(int): return true;
+                case bool _ when typeIn == typeof(float): return true;
+                case bool _ when typeIn == typeof(DateTime): return true;
+                default: return false;
+            }
+        }
     }
 }

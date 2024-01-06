@@ -40,7 +40,7 @@ namespace FileDB.Core
         {
             var builder = new StringBuilder();
             foreach (var element in _elements)
-                builder.AppendLine(element.ConvertData());
+                builder.AppendLine(element.Convert());
             return builder.ToString();
         }
         public override string ToString()

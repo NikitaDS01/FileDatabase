@@ -1,7 +1,9 @@
 ﻿using FileDB.Core;
 using FileDB.Core.Attribute;
 using FileDB.Function;
+using System.Diagnostics;
 using System.Reflection;
+using System.Xml.Linq;
 
 namespace FileDB.Serialization
 {
@@ -20,51 +22,96 @@ namespace FileDB.Serialization
             if(objectIn == null) throw new ArgumentNullException(nameof(objectIn));
 
             var builder = new RecordBuilder();
+            var propetries = GetPropertyName(objectIn.GetType());
 
-            foreach (PropertyInfo property in objectIn.GetType().GetProperties(
-            BindingFlags.Instance | BindingFlags.Public))
+            foreach (var propertyName in propetries)
             {
-                bool nonSerialize = false;
-                string name = property.Name;
-                foreach (var info in property.GetCustomAttributes())
-                {
-                    if(info is NonSerializeFileAttribute) 
-                        nonSerialize = true;
-                    if (info is SerializeFileAttribute attributeName)
-                        name = attributeName.Name;
-                }
-                if (nonSerialize)
-                    continue;
-                builder.TryAdd(name, property.PropertyType, property.GetValue(objectIn));
+                var name = propertyName.Item2;
+                var property = propertyName.Item1;
+                if (ConvertEnum.IsDefaultValue(property.PropertyType))
+                    builder.TryAdd(name, property.PropertyType, property.GetValue(objectIn));
             }
             return builder.GetRecord();
 
         }
-        public static void Deserialize<Out>(Record recordIn)
+        public static Out Deserialize<Out>(Record recordIn)
         {
             Type type = typeof(Out);
-            var property = type.GetProperties(
-                BindingFlags.Instance | BindingFlags.Public);
+            var propetries = GetProperty(type);
+            var lenght = propetries.Count();
             var constructors = type.GetConstructors(
-                BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                BindingFlags.Instance | BindingFlags.Public);
 
-            var constructorFull = constructors.FirstOrDefault(
-                con => con.GetParameters().Length == property.Length);
-            var constructorNull = constructors.FirstOrDefault(
-                con => con.GetParameters().Length == 0);
+            if (constructors.Length == 0)
+                throw new Exception("В данном классе нет конструкторов");
+            foreach (var info in constructors)
+                Console.WriteLine($"{info.GetParameters().Length}");
+            var constructorFull = constructors.FirstOrDefault(constr =>
+                constr.GetParameters().Length == lenght);
+            var constructorEmpty = constructors.FirstOrDefault(constr =>
+                constr.GetParameters().Length == 0);
 
             if (constructorFull != null)
             {
-                Console.WriteLine("Yes");
+                var arguments = new object[lenght];
+                for(int index = 0;index < lenght; index++)
+                    arguments[index] = recordIn[index].GetValue();
+
+                Console.WriteLine($"{constructorFull.Name} {constructorFull.GetParameters().Length}");
+                return (Out)constructorFull?.Invoke(arguments);
             }
-            else if (constructorNull != null)
+            else if (constructorEmpty != null)
             {
-                Console.WriteLine("Почти есть");
+                Console.WriteLine($"{constructorEmpty.Name} {constructorEmpty.GetParameters().Length}");
+                return (Out)constructorEmpty?.Invoke(new object[] { });
             }
             else
             {
-                Console.WriteLine("Нет");
+                throw new Exception("В данном классе нет подходящих конструкторов");
             }
+        }
+        private static IEnumerable<(PropertyInfo, string)> GetPropertyName(System.Type typeIn)
+        {
+            var list = new List<(PropertyInfo, string)>();
+            var propetries = typeIn.GetProperties(
+                BindingFlags.Instance | BindingFlags.Public);
+
+            foreach (PropertyInfo property in propetries)
+            {
+                bool nonSerialize = false;
+                string name = property.Name;
+                foreach (var attribute in property.GetCustomAttributes())
+                {
+                    if (attribute is NonSerializeFileAttribute)
+                        nonSerialize = true;
+                    if (attribute is SerializeNameFileAttribute attributeName)
+                        name = attributeName.Name;
+                }
+                if (nonSerialize)
+                    continue;
+                list.Add((property, name));
+            }
+            return list;
+        }
+        private static IEnumerable<PropertyInfo> GetProperty(System.Type typeIn)
+        {
+            var list = new List<PropertyInfo>();
+            var propetries = typeIn.GetProperties(
+                BindingFlags.Instance | BindingFlags.Public);
+
+            foreach (PropertyInfo property in propetries)
+            {
+                bool nonSerialize = false;
+                foreach (var attribute in property.GetCustomAttributes())
+                {
+                    if (attribute is NonSerializeFileAttribute)
+                        nonSerialize = true;
+                }
+                if (nonSerialize)
+                    continue;
+                list.Add(property);
+            }
+            return list;
         }
     }
 }

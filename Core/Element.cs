@@ -1,4 +1,6 @@
-﻿namespace FileDB.Core
+﻿using FileDB.Function;
+
+namespace FileDB.Core
 {
     public class Element
     {
@@ -23,7 +25,18 @@
         public TypeValue Type => _type;
         public string Value => _value;
 
-        public string ConvertData()
+        public object GetValue()
+        {
+            switch(Type)
+            {
+                case TypeValue.Text: return _value;
+                case TypeValue.Int: return ConvertData.ToInt(this);
+                case TypeValue.Float: return ConvertData.ToFloat(this);
+                case TypeValue.DateTime: return ConvertData.ToDateTime(this);
+                default: return _value;
+            }
+        }
+        public string Convert()
         {
             return $"[{Name}][{Type}]:[{Value}]";
         }
