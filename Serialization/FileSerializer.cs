@@ -44,8 +44,7 @@ namespace FileDB.Serialization
 
             if (constructors.Length == 0)
                 throw new Exception("В данном классе нет конструкторов");
-            foreach (var info in constructors)
-                Console.WriteLine($"{info.GetParameters().Length}");
+
             var constructorFull = constructors.FirstOrDefault(constr =>
                 constr.GetParameters().Length == lenght);
             var constructorEmpty = constructors.FirstOrDefault(constr =>
@@ -56,8 +55,6 @@ namespace FileDB.Serialization
                 var arguments = new object[lenght];
                 for(int index = 0;index < lenght; index++)
                     arguments[index] = recordIn[index].GetValue();
-
-                Console.WriteLine($"{constructorFull.Name} {constructorFull.GetParameters().Length}");
                 return (Out)constructorFull?.Invoke(arguments);
             }
             else if (constructorEmpty != null)

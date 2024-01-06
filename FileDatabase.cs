@@ -60,7 +60,6 @@ namespace FileDB
         {
             return this.ReadData(new NameRecord(typeIn, nameIn, formatIn));
         }
-
         public Record ReadData(NameRecord nameFileIn)
         {
             string path = _path + '\\' + nameFileIn.GetName();
