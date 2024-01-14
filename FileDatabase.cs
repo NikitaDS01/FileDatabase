@@ -1,86 +1,72 @@
 ﻿using FileDB.Core.Data;
+using FileDB.Core.Data.Tables;
 using FileDB.Core.File;
 using FileDB.Core.Reader;
 using FileDB.Core.Writer;
 using FileDB.Function;
+using FileDB.Serialization;
 
 namespace FileDB
 {
     public class FileDatabase
     {
+        private const string SETTING_TABLE = ".settingfdb";
         public class SettingDatabase
         {
             public string Path { get; set; } = string.Empty;
         }
 
-        private readonly string _path;
-        private readonly DirectoryInfo _directory;
-        public FileDatabase(string path) : this(new SettingDatabase { Path = path }) 
-        { }
-
-        public FileDatabase(SettingDatabase settingIn)
+        private DirectoryInfo _rootDirectory;
+        private Dictionary<string, Table> _tables;
+        private bool _isLoadDatabase;
+        public FileDatabase()
         {
-            if(string.IsNullOrEmpty(settingIn.Path))
-                throw new NullReferenceException(nameof(settingIn.Path));
-
-            _path = settingIn.Path;
-            if(!ExistsDatabase)
-                throw new FileNotFoundException(nameof(settingIn.Path));
-
-            _directory = new DirectoryInfo(_path);
+            _isLoadDatabase = false;
+            _tables = new Dictionary<string, Table>();
+            _rootDirectory = null!;
+        }
+        public IReadOnlyCollection<Table> Tables => _tables.Values;
+        public Table RootTable => _tables.Values.First(table => table.IsRoot);
+        public Table this[string name] => _tables[name];
+        
+        public void Initialize(string pathIn)
+        {
+            this.Initialize(new SettingDatabase(){Path = pathIn});
+        }
+        public void Initialize(SettingDatabase settingIn)
+        {
+            _rootDirectory = new DirectoryInfo(settingIn.Path);
+            this.LoadTables();
         }
 
-        public bool ExistsDatabase => Directory.Exists(_path);
-        public string[] PathDirectories => Directory.GetDirectories(_path);
-        public string[] PathFiles => Directory.GetFiles(_path);
-        public string[] PathDirectoriesAndFiles => Directory.GetFileSystemEntries(_path);
-        public FileInfo[] Files => _directory.GetFiles();
-        public DirectoryInfo[] Directories => _directory.GetDirectories();
-
-        public FileInfo? TryFindFile(string nameFileIn, TypeFormat formatIn = TypeFormat.TXT)
+        private void LoadTables()
         {
-            string findFile = FunctionFile.FileName(nameFileIn, formatIn);
-            foreach(FileInfo file in Files)
+            FileInfo[] files = _rootDirectory.GetFiles(SETTING_TABLE, SearchOption.AllDirectories);
+            foreach(var file in files)
             {
-                if(file.Name == findFile)
-                    return file;
+                var record = this.ReadData(file.FullName);
+                var property = FileSerializer.Deserialize<PropertyTable>(record);
+                Table parentTable = null;
+                if(_tables.ContainsKey(property.ParentTable))
+                    parentTable = _tables[property.ParentTable];
+
+                var table = new Table(file.Directory, property, parentTable);
+                _tables.Add(property.NameTable, table);
             }
-            return null;
         }
-        public DirectoryInfo? TryFindDirectory(string nameDirectoryIn)
+        public Record ReadData(string pathIn)
         {
-            foreach (DirectoryInfo directory in Directories)
-            {
-                if (directory.Name == nameDirectoryIn)
-                    return directory;
-            }
-            return null;
-        }
-        public Record ReadData(string typeIn, string nameIn, TypeFormat formatIn)
-        {
-            return this.ReadData(new NameRecord(typeIn, nameIn, formatIn));
-        }
-        public Record ReadData(NameRecord nameFileIn)
-        {
-            string path = _path + '\\' + nameFileIn.GetName();
-            var reader = new ReaderFileTxt(path);
+            var reader = new ReaderFileTxt(pathIn);
             string data = reader.Read();
-            if (string.IsNullOrEmpty(data))
-                throw new NullReferenceException(nameof(path));
-
+            if(string.IsNullOrEmpty(data))
+                throw new ArgumentNullException(nameof(pathIn));
             return ReaderData.Read(data);
         }
-        public void WriteData(string typeIn, string nameIn, TypeFormat formatIn, Record recordIn)
+        public void WriteData(string pathIn, Record recordIn)
         {
-            this.WriteData(new NameRecord(typeIn, nameIn, formatIn), recordIn);
-        }
-        public void WriteData(NameRecord nameFileIn, Record recordIn)
-        {
-            string path = _path + '\\' + nameFileIn.GetName();
+            var writer = new WriterFileTxt(pathIn);
             string data = WriterData.Write(recordIn);
-
-            var reader = new WriterFileTxt(path);
-            reader.Write(data);
+            writer.Write(data);
         }
     }
 }
