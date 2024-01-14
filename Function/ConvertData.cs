@@ -1,9 +1,4 @@
-﻿using FileDB.Core;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using FileDB.Core.Data;
 
 namespace FileDB.Function
 {
@@ -15,7 +10,7 @@ namespace FileDB.Function
             {
                 return Convert.ToInt32(elementIn.Value);
             }
-            catch (FormatException ex)
+            catch (FormatException)
             {
                 throw new Exception($"У элемента {nameof(elementIn)} значение не является Int");
             }
@@ -26,7 +21,7 @@ namespace FileDB.Function
             {
                 return Convert.ToSingle(elementIn.Value);
             }
-            catch (FormatException ex)
+            catch (FormatException)
             {
                 throw new Exception($"У элемента {nameof(elementIn)} значение не является Float");
             }
@@ -37,7 +32,7 @@ namespace FileDB.Function
             {
                 return Convert.ToDateTime(elementIn.Value);
             }
-            catch (FormatException ex)
+            catch (FormatException)
             {
                 throw new Exception($"У элемента {nameof(elementIn)} значение не является DateTime");
             }

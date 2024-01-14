@@ -4,6 +4,6 @@
         AllowMultiple = true, Inherited =false)]
     public class SerializeNameFileAttribute : System.Attribute
     {
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
     }
 }

@@ -1,6 +1,6 @@
 ﻿using FileDB.Function;
 
-namespace FileDB.Core
+namespace FileDB.Core.Data
 {
     public class Element
     {

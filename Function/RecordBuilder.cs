@@ -1,4 +1,4 @@
-﻿using FileDB.Core;
+﻿using FileDB.Core.Data;
 
 namespace FileDB.Function
 {

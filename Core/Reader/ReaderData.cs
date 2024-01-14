@@ -1,9 +1,5 @@
 ﻿using FileDB.Function;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using FileDB.Core.Data;
 
 namespace FileDB.Core.Reader
 {
@@ -64,7 +60,7 @@ namespace FileDB.Core.Reader
 
             return new Element(
                 data[0],
-                ConvertEnum.ToEnum<TypeValue>(data[1]),
+                ConvertEnum.ToEnum<Data.TypeValue>(data[1]),
                 data[2]);
         }
     }
