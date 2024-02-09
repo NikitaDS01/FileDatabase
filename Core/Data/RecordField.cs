@@ -2,21 +2,21 @@
 
 namespace FileDB.Core.Data
 {
-    public class Element
+    public class RecordField
     {
         private readonly string _name;
         private readonly TypeValue _type;
         private readonly string _value = null!;
         private readonly bool _isIndexField;
 
-        public Element(string name, TypeValue type, string value, bool isIndexIn = false)
+        public RecordField(string name, TypeValue type, string value, bool isIndexIn = false)
         {
             _isIndexField = isIndexIn;
             _name = name;
             _type = type;
             _value = value;
         }
-        public Element(string name, TypeValue type, object value, bool isIndexIn = false )
+        public RecordField(string name, TypeValue type, object value, bool isIndexIn = false )
         {
             if(value == null) throw new ArgumentNullException(nameof(value));
             
@@ -48,6 +48,32 @@ namespace FileDB.Core.Data
         public override string ToString()
         {
             return $"{Name}:{Value}";
+        }
+        public override bool Equals(object? obj)
+        {
+            if(obj == null || !(obj is RecordField))
+            {
+                return false;
+            }
+            else
+            {
+                var element = obj as RecordField;
+                return this.Name == element.Name &&
+                    this.Type == element.Type &&
+                    this.Value == element.Value;
+            }
+        }
+        public static bool operator ==(RecordField el1, RecordField el2)
+        {
+            return el1.Name == el2.Name;
+        }
+        public static bool operator !=(RecordField el1, RecordField el2)
+        {
+            return el1.Name != el2.Name;
+        }
+        public static bool IsEqualsType(RecordField el1, RecordField el2)
+        {
+            return el1.Type == el2.Type;
         }
     }
 }

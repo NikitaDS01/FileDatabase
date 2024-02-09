@@ -10,7 +10,7 @@ using FileDB.Serialization;
 
 namespace FileDB.Core.Data.Tables
 {
-    public class Table
+    public partial class Table
     {
         private const string SETTING_TABLE = "*.fdb";
         private readonly DirectoryInfo _directoryTable;
@@ -43,33 +43,6 @@ namespace FileDB.Core.Data.Tables
 
         #region WorkDataTable PublicMethod 
         
-        public Record FindOne(string valueIn)
-        {
-            foreach(var file in Files)
-            {
-                var reader = new ReaderFileTxt(file.FullName);
-                string data = reader.Read();
-                if(data.Contains(valueIn))
-                {
-                    return ReaderData.Read(data);
-                }
-            }
-            return null;
-        }
-        public Record[] Find(string valueIn)
-        {
-            List<Record> list = new List<Record>();
-            foreach(var file in Files)
-            {
-                var reader = new ReaderFileTxt(file.FullName);
-                string data = reader.Read();
-                if(data.Contains(valueIn))
-                {
-                    list.Add(ReaderData.Read(data));
-                }
-            }
-            return list.ToArray();
-        }
         public void WriteArray(IEnumerable<Record> recordsIn)
         {
             foreach(var record in recordsIn)
@@ -171,6 +144,30 @@ namespace FileDB.Core.Data.Tables
             if(string.IsNullOrEmpty(data))
                 throw new ArgumentNullException(nameof(pathIn));
             return ReaderData.Read(data);
+        }
+        private List<Record> GiveAllRecord()
+        {
+            List<Record> list = new List<Record>();
+            foreach(var file in Files)
+            {
+                var reader = new ReaderFileTxt(file.FullName);
+                string data = reader.Read();
+                list.Add(ReaderData.Read(data));
+            }
+            return list;
+        }
+        private List<Record> GiveRecord(string nameFieldIn)
+        {
+            List<Record> list = new List<Record>();
+            foreach(var file in Files)
+            {
+                var reader = new ReaderFileTxt(file.FullName);
+                string data = reader.Read();
+                var record = ReaderData.Read(data);
+                if(record.ContainField(nameFieldIn))
+                    list.Add(record);
+            }
+            return list;
         }
         private FileInfo[] GetFileFDB(DirectoryInfo[] directories)
         {

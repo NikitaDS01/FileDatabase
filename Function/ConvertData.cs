@@ -4,7 +4,7 @@ namespace FileDB.Function
 {
     public static class ConvertData
     {
-        public static int ToInt(Element elementIn)
+        public static int ToInt(RecordField elementIn)
         {
             try
             {
@@ -15,7 +15,7 @@ namespace FileDB.Function
                 throw new Exception($"У элемента {nameof(elementIn)} значение не является Int");
             }
         }
-        public static float ToFloat(Element elementIn)
+        public static float ToFloat(RecordField elementIn)
         {
             try
             {
@@ -26,7 +26,7 @@ namespace FileDB.Function
                 throw new Exception($"У элемента {nameof(elementIn)} значение не является Float");
             }
         }
-        public static DateTime ToDateTime(Element elementIn)
+        public static DateTime ToDateTime(RecordField elementIn)
         {
             try
             {

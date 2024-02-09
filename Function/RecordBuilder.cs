@@ -4,10 +4,10 @@ namespace FileDB.Function
 {
     public class RecordBuilder
     {
-        private readonly List<Element> _elements;
+        private readonly List<RecordField> _elements;
         public RecordBuilder()
         {
-            _elements = new List<Element>();
+            _elements = new List<RecordField>();
         }
         public bool TryAdd(string name, object value)
         {
@@ -23,7 +23,7 @@ namespace FileDB.Function
             if (type == TypeValue.None )
                 return false;
 
-            _elements.Add(new Element(name, type, value, isIndex));
+            _elements.Add(new RecordField(name, type, value, isIndex));
             return true;
         }
         public Record GetRecord()

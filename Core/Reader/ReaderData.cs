@@ -12,7 +12,7 @@ namespace FileDB.Core.Reader
         public static Record Read(string textIn)
         {
             string[] rows = textIn.Split(END_ROW);
-            var elements = new List<Element>();
+            var elements = new List<RecordField>();
             for(int index = 0; index < rows.Length; index++)
             {
                 if (string.IsNullOrEmpty(rows[index]) || 
@@ -20,13 +20,13 @@ namespace FileDB.Core.Reader
                 {
                     continue;
                 }
-                Element? element = WriteString(rows[index]);
+                RecordField? element = WriteString(rows[index]);
                 if(element != null)
                     elements.Add(element);
             }
             return new Record(elements.ToArray());            
         } 
-        private static Element? WriteString(string rowIn)
+        private static RecordField? WriteString(string rowIn)
         {
             string temp = rowIn;
             string[] data = new string[COUNT_MARKUP];
@@ -58,7 +58,7 @@ namespace FileDB.Core.Reader
                 return null;
             }
 
-            return new Element(
+            return new RecordField(
                 data[0],
                 ConvertEnum.ToEnum<Data.TypeValue>(data[1]),
                 data[2]);
