@@ -10,51 +10,71 @@ namespace FileDB
 {
     public class FileDatabase
     {
-        private const string SETTING_TABLE = ".settingfdb";
+        private const string SETTING_TABLE = "*.fdb";
         public class SettingDatabase
         {
             public string Path { get; set; } = string.Empty;
         }
 
-        private DirectoryInfo _rootDirectory;
-        private Dictionary<string, Table> _tables;
+        private DirectoryInfo _databaseDirectory;
+        private Dictionary<string, Table> _rootTables;
         private bool _isLoadDatabase;
-        public FileDatabase()
+        public FileDatabase(string pathIn) : this(new SettingDatabase{Path = pathIn})
+        { }
+        public FileDatabase(SettingDatabase settingIn)
         {
             _isLoadDatabase = false;
-            _tables = new Dictionary<string, Table>();
-            _rootDirectory = null!;
+            _rootTables = new Dictionary<string, Table>();
+            _databaseDirectory = new DirectoryInfo(settingIn.Path);
         }
-        public IReadOnlyCollection<Table> Tables => _tables.Values;
-        public Table RootTable => _tables.Values.First(table => table.IsRoot);
-        public Table this[string name] => _tables[name];
+        public Table this[string name] => _rootTables[name];
         
-        public void Initialize(string pathIn)
+        public bool ContainRootTable(string nameIn)
         {
-            this.Initialize(new SettingDatabase(){Path = pathIn});
+            return _rootTables.ContainsKey(nameIn);
         }
-        public void Initialize(SettingDatabase settingIn)
+        public Table CreateRootTable(string nameIn)
         {
-            _rootDirectory = new DirectoryInfo(settingIn.Path);
-            this.LoadTables();
+            var property = new PropertyTable() {NameTable = nameIn};
+            DirectoryInfo info = _databaseDirectory.CreateSubdirectory(nameIn);
+            Record record = FileSerializer.Serialize<PropertyTable>(property);
+            this.WriteData(FunctionFile.FullFileName(info.FullName, 
+                property.NameTable, TypeFormat.FDB), record);
+            
+            var table = new Table(info, property);
+            _rootTables.Add(table.Name, table);
+            return table;
         }
-
-        private void LoadTables()
+        public void Initialize()
         {
-            FileInfo[] files = _rootDirectory.GetFiles(SETTING_TABLE, SearchOption.AllDirectories);
+            DirectoryInfo[] directoryTables = _databaseDirectory.GetDirectories();
+            FileInfo[] files = this.GetFileFDB(directoryTables);
             foreach(var file in files)
             {
+                if(file == null)
+                    throw new ArgumentNullException(nameof(file));
+
+                Console.WriteLine(file.Name);
                 var record = this.ReadData(file.FullName);
                 var property = FileSerializer.Deserialize<PropertyTable>(record);
-                Table parentTable = null;
-                if(_tables.ContainsKey(property.ParentTable))
-                    parentTable = _tables[property.ParentTable];
-
-                var table = new Table(file.Directory, property, parentTable);
-                _tables.Add(property.NameTable, table);
+                var table = new Table(file.Directory, property);
+                _rootTables.Add(property.NameTable, table);
+                table.Initialize();
             }
         }
-        public Record ReadData(string pathIn)
+       
+        private FileInfo[] GetFileFDB(DirectoryInfo[] directories)
+        {
+            var files = new FileInfo[directories.Length];
+            for(int index = 0; index < directories.Length;index++)
+            {
+                var directory = directories[index];
+                var tmp = directory.GetFiles(SETTING_TABLE, SearchOption.TopDirectoryOnly);
+                files[index] = tmp.First();
+            }
+            return files;
+        }
+        private Record ReadData(string pathIn)
         {
             var reader = new ReaderFileTxt(pathIn);
             string data = reader.Read();
@@ -62,7 +82,7 @@ namespace FileDB
                 throw new ArgumentNullException(nameof(pathIn));
             return ReaderData.Read(data);
         }
-        public void WriteData(string pathIn, Record recordIn)
+        private void WriteData(string pathIn, Record recordIn)
         {
             var writer = new WriterFileTxt(pathIn);
             string data = WriterData.Write(recordIn);

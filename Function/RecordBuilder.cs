@@ -11,22 +11,19 @@ namespace FileDB.Function
         }
         public bool TryAdd(string name, object value)
         {
-            var type = ConvertEnum.ToValue(value.GetType());
-            if (type == TypeValue.None) 
-                return false;
-
-            _elements.Add(new Element(name, type, value));
-            return true;
+            return TryAdd(name, value.GetType(), value,false);
         }
-        public bool TryAdd(string name, System.Type typeIn, object value)
+        public bool TryAdd(string name, System.Type typeIn, object value,bool isIndex)
         {
+            if(value == null)
+                return false;
             if (typeIn != value.GetType())
                 return false;
             var type = ConvertEnum.ToValue(typeIn);
             if (type == TypeValue.None )
                 return false;
 
-            _elements.Add(new Element(name, type, value));
+            _elements.Add(new Element(name, type, value, isIndex));
             return true;
         }
         public Record GetRecord()

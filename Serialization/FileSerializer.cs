@@ -11,6 +11,18 @@ namespace FileDB.Serialization
         {
             public FileSerializerOptions() { }
         }
+        private class PropertyRecordInfo
+        {
+            public PropertyRecordInfo(PropertyInfo infoIn)
+            {
+                NameProperty = infoIn.Name;
+                Property = infoIn;
+            } 
+            public PropertyInfo Property {get;set;}
+            public bool IsIndex {get;set;} = false;
+            public string NameProperty {get;set;}
+        }
+
         public static Record Serialize<In>(In objectIn)
         {
             return FileSerializer.Serialize(objectIn, new FileSerializerOptions());
@@ -20,14 +32,16 @@ namespace FileDB.Serialization
             if(objectIn == null) throw new ArgumentNullException(nameof(objectIn));
 
             var builder = new RecordBuilder();
-            var propetries = GetPropertyName(objectIn.GetType());
+            var properties = GetProperty(objectIn.GetType());
 
-            foreach (var propertyName in propetries)
+            foreach (var setting in properties)
             {
-                var name = propertyName.Item2;
-                var property = propertyName.Item1;
+                var name = setting.NameProperty;
+                var property = setting.Property;
+                var isIndex = setting.IsIndex;
                 if (ConvertEnum.IsDefaultValue(property.PropertyType))
-                    builder.TryAdd(name, property.PropertyType, property.GetValue(objectIn));
+                    builder.TryAdd(name, property.PropertyType, 
+                    property.GetValue(objectIn), isIndex);
             }
             return builder.GetRecord();
 
@@ -35,8 +49,7 @@ namespace FileDB.Serialization
         public static Out Deserialize<Out>(Record recordIn)
         {
             Type type = typeof(Out);
-            var propetries = GetProperty(type);
-            var lenght = propetries.Count();
+            var length = GetProperty(type).Count();
             var constructors = type.GetConstructors(
                 BindingFlags.Instance | BindingFlags.Public);
 
@@ -44,14 +57,14 @@ namespace FileDB.Serialization
                 throw new Exception("В данном классе нет конструкторов");
 
             var constructorFull = constructors.FirstOrDefault(constr =>
-                constr.GetParameters().Length == lenght);
+                constr.GetParameters().Length == length);
             var constructorEmpty = constructors.FirstOrDefault(constr =>
                 constr.GetParameters().Length == 0);
 
             if (constructorFull != null)
             {
-                var arguments = new object[lenght];
-                for(int index = 0;index < lenght; index++)
+                var arguments = new object[length];
+                for(int index = 0;index < length; index++)
                     arguments[index] = recordIn[index].GetValue();
                 return (Out)constructorFull?.Invoke(arguments);
             }
@@ -65,46 +78,29 @@ namespace FileDB.Serialization
                 throw new Exception("В данном классе нет подходящих конструкторов");
             }
         }
-        private static IEnumerable<(PropertyInfo, string)> GetPropertyName(System.Type typeIn)
+        private static IEnumerable<PropertyRecordInfo> GetProperty(System.Type typeIn)
         {
-            var list = new List<(PropertyInfo, string)>();
-            var propetries = typeIn.GetProperties(
+            var list = new List<PropertyRecordInfo>();
+            var properties = typeIn.GetProperties(
                 BindingFlags.Instance | BindingFlags.Public);
 
-            foreach (PropertyInfo property in propetries)
+            foreach (PropertyInfo property in properties)
             {
                 bool nonSerialize = false;
-                string name = property.Name;
+                var settings = new PropertyRecordInfo(property);
                 foreach (var attribute in property.GetCustomAttributes())
                 {
                     if (attribute is NonSerializeFileAttribute)
                         nonSerialize = true;
                     if (attribute is SerializeNameFileAttribute attributeName)
-                        name = attributeName.Name;
+                        settings.NameProperty = attributeName.Name;
+                    if(attribute is SerializeIndexAttribute)
+                        settings.IsIndex = true;
                 }
                 if (nonSerialize)
                     continue;
-                list.Add((property, name));
-            }
-            return list;
-        }
-        private static IEnumerable<PropertyInfo> GetProperty(System.Type typeIn)
-        {
-            var list = new List<PropertyInfo>();
-            var propetries = typeIn.GetProperties(
-                BindingFlags.Instance | BindingFlags.Public);
-
-            foreach (PropertyInfo property in propetries)
-            {
-                bool nonSerialize = false;
-                foreach (var attribute in property.GetCustomAttributes())
-                {
-                    if (attribute is NonSerializeFileAttribute)
-                        nonSerialize = true;
-                }
-                if (nonSerialize)
-                    continue;
-                list.Add(property);
+                    
+                list.Add(settings);
             }
             return list;
         }

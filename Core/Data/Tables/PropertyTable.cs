@@ -4,12 +4,19 @@ namespace FileDB.Core.Data.Tables
     {
         public int LastIndex { get; set;}
         public string NameTable { get; set;}
-        public string ParentTable { get; set;}
-        public PropertyTable(int indexIn, string name, string parentTable)
+        public DateTime LastUpdate {get;set;}
+        public PropertyTable()
+        {
+            LastIndex = 0;
+            NameTable = string.Empty;
+            LastUpdate = DateTime.Now;
+        }
+        public PropertyTable(int indexIn, string name, 
+            DateTime lastUpdateIn)
         {
             LastIndex = indexIn;
             NameTable = name;
-            ParentTable = parentTable;
+            LastUpdate = lastUpdateIn;
         }
     }
 }
