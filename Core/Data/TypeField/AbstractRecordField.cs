@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace FileDB.Core.Data.TypeElement
+namespace FileDB.Core.Data.TypeField
 {
     public abstract class AbstractRecordField
     {

@@ -1,29 +1,32 @@
 ﻿using FileDB.Core.Data;
+using FileDB.Core.Data.TypeField;
 
 namespace FileDB.Function
 {
     public class RecordBuilder
     {
-        private readonly List<RecordField> _elements;
+        private readonly List<AbstractRecordField> _elements;
         public RecordBuilder()
         {
-            _elements = new List<RecordField>();
+            _elements = new List<AbstractRecordField>();
+        }
+        public void Add(AbstractRecordField fieldIn)
+        {
+            _elements.Add(fieldIn);
         }
         public bool TryAdd(string name, object value)
         {
-            return TryAdd(name, value.GetType(), value,false);
+            return TryAdd(name, value,false);
         }
-        public bool TryAdd(string name, System.Type typeIn, object value,bool isIndex)
+        public bool TryAdd(string name, object value,bool isIndex)
         {
+            var type = value.GetType();
             if(value == null)
                 return false;
-            if (typeIn != value.GetType())
-                return false;
-            var type = ConvertEnum.ToValue(typeIn);
-            if (type == TypeValue.None )
+            if(!ConvertEnum.IsDefaultValue(type))
                 return false;
 
-            _elements.Add(new RecordField(name, type, value, isIndex));
+            _elements.Add(ConvertEnum.ValueToField(name, value, isIndex));            
             return true;
         }
         public Record GetRecord()

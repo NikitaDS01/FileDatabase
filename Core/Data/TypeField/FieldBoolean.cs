@@ -1,9 +1,9 @@
-namespace FileDB.Core.Data.TypeElement
+namespace FileDB.Core.Data.TypeField
 {
-    public class FiledBoolean : AbstractRecordField
+    public class FieldBoolean : AbstractRecordField
     {
         private readonly bool _value;
-        public FiledBoolean(string nameIn, bool valueIn, bool isIndexIn = false) 
+        public FieldBoolean(string nameIn, bool valueIn, bool isIndexIn = false) 
             : base(nameIn, isIndexIn)
         {
             _value = valueIn;
@@ -16,7 +16,7 @@ namespace FileDB.Core.Data.TypeElement
 
         public override bool EqualsField(AbstractRecordField fieldIn)
         {
-            if(!(fieldIn is FiledBoolean) || fieldIn.Name != this.Name)
+            if(!(fieldIn is FieldBoolean) || fieldIn.Name != this.Name)
                 return false;
             else
                 return _value == (bool)fieldIn.Value;

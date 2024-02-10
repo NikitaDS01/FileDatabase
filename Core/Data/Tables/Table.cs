@@ -145,28 +145,44 @@ namespace FileDB.Core.Data.Tables
                 throw new ArgumentNullException(nameof(pathIn));
             return ReaderData.Read(data);
         }
-        private List<Record> GiveAllRecord()
+        private List<Record> GiveAllRecord(ParameterSearch parameterIn)
         {
+            var files = this.Files;
+            if(parameterIn.Skip > files.Length)
+                return new List<Record>();
+
             List<Record> list = new List<Record>();
-            foreach(var file in Files)
+            for(int index =parameterIn.Skip; index < files.Length; index++)
             {
-                var reader = new ReaderFileTxt(file.FullName);
-                string data = reader.Read();
-                list.Add(ReaderData.Read(data));
+                if(index - parameterIn.Skip >= parameterIn.Take)
+                    break;
+
+                list.Add(this.ReadData(files[index].FullName));
             }
             return list;
         }
-        private List<Record> GiveRecord(string nameFieldIn)
+        private List<Record> GiveFilterRecord(string nameFieldIn, ParameterSearch parameterIn)
         {
+            var files = this.Files;
+            if(parameterIn.Skip > files.Length)
+                return new List<Record>();
+
+            int count = 0;
             List<Record> list = new List<Record>();
-            foreach(var file in Files)
+            for(int index =parameterIn.Skip; index < files.Length; index++)
             {
-                var reader = new ReaderFileTxt(file.FullName);
-                string data = reader.Read();
-                var record = ReaderData.Read(data);
+                if(count >= parameterIn.Take)
+                    break;
+                
+                //Console.WriteLine(files[index].FullName);
+                var record = this.ReadData(files[index].FullName);
                 if(record.ContainField(nameFieldIn))
+                {
+                    count++;
                     list.Add(record);
+                }
             }
+            Console.WriteLine(list.Count);
             return list;
         }
         private FileInfo[] GetFileFDB(DirectoryInfo[] directories)

@@ -40,8 +40,7 @@ namespace FileDB.Serialization
                 var property = setting.Property;
                 var isIndex = setting.IsIndex;
                 if (ConvertEnum.IsDefaultValue(property.PropertyType))
-                    builder.TryAdd(name, property.PropertyType, 
-                    property.GetValue(objectIn), isIndex);
+                    builder.TryAdd(name, property.GetValue(objectIn), isIndex);
             }
             return builder.GetRecord();
 
@@ -65,7 +64,7 @@ namespace FileDB.Serialization
             {
                 var arguments = new object[length];
                 for(int index = 0;index < length; index++)
-                    arguments[index] = recordIn[index].GetValue();
+                    arguments[index] = recordIn[index].Value;
                 return (Out)constructorFull?.Invoke(arguments);
             }
             else if (constructorEmpty != null)

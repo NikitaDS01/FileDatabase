@@ -1,5 +1,6 @@
 ﻿using FileDB.Function;
 using FileDB.Core.Data;
+using FileDB.Core.Data.TypeField;
 
 namespace FileDB.Core.Reader
 {
@@ -8,35 +9,41 @@ namespace FileDB.Core.Reader
         private const char END_ROW = '\n';
         private const char END_DATA = ']';
         private const char BEGIN_DATA = '[';
+        private const char FIELD_INDEX = '*';
         private const int COUNT_MARKUP = 3;
         public static Record Read(string textIn)
         {
             string[] rows = textIn.Split(END_ROW);
-            var elements = new List<RecordField>();
+            var builder = new RecordBuilder();
             for(int index = 0; index < rows.Length; index++)
             {
                 if (string.IsNullOrEmpty(rows[index]) || 
-                    rows[index][0] != BEGIN_DATA)
+                    (rows[index][0] != BEGIN_DATA &&
+                    rows[index][0] != FIELD_INDEX))
                 {
                     continue;
                 }
-                RecordField? element = WriteString(rows[index]);
-                if(element != null)
-                    elements.Add(element);
+                var field = WriteString(rows[index]);
+                if(field != null)
+                    builder.Add(field);
             }
-            return new Record(elements.ToArray());            
+            return builder.GetRecord();            
         } 
-        private static RecordField? WriteString(string rowIn)
+        private static AbstractRecordField? WriteString(string rowIn)
         {
             string temp = rowIn;
             string[] data = new string[COUNT_MARKUP];
             int indexCurrent = 0;
+            bool isIndex = false;
 
             if (rowIn.Count(c => c == BEGIN_DATA) != COUNT_MARKUP)
                 return null;
 
             if (rowIn.Count(c => c == END_DATA) != COUNT_MARKUP)
                 return null;
+
+            if (rowIn.Contains(FIELD_INDEX))
+                isIndex = true;
 
             while (indexCurrent != COUNT_MARKUP)
             {
@@ -58,10 +65,7 @@ namespace FileDB.Core.Reader
                 return null;
             }
 
-            return new RecordField(
-                data[0],
-                ConvertEnum.ToEnum<Data.TypeValue>(data[1]),
-                data[2]);
+            return ConvertEnum.StringToField(data[0], data[1], data[2], isIndex);
         }
     }
 }

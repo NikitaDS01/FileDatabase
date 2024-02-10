@@ -1,20 +1,21 @@
 ﻿using System.Collections;
 using System.Text;
+using FileDB.Core.Data.TypeField;
 
 namespace FileDB.Core.Data
 {
     public class Record : IEnumerable
     {
-        private readonly RecordField[] _elements;
+        private readonly AbstractRecordField[] _elements;
         private readonly int _indexElement;
 
-        public Record(RecordField[] elements)
+        public Record(AbstractRecordField[] elements)
         {
             _elements = elements;
             _indexElement = -1;
             for(int i = 0; i < _elements.Length; i++)
             {
-                if(_elements[i].IsIndexElement)
+                if(_elements[i].IsIndex)
                 {
                     _indexElement = i;
                     break;
@@ -24,9 +25,9 @@ namespace FileDB.Core.Data
 
         public int Length => _elements.Length;
         public bool IsIndex => _indexElement != -1;
-        public RecordField IndexElement => _elements[_indexElement];
+        public AbstractRecordField IndexElement => _elements[_indexElement];
 
-        public RecordField this[int index]
+        public AbstractRecordField this[int index]
         {
             get => _elements[index];
         }
@@ -49,7 +50,7 @@ namespace FileDB.Core.Data
             }
             return false;
         }
-        public RecordField GetField(string nameIn)
+        public AbstractRecordField GetField(string nameIn)
         {
             for(int i = 0; i < _elements.Length; i++)
             {
@@ -60,7 +61,7 @@ namespace FileDB.Core.Data
             }
             throw new ArgumentNullException(nameof(nameIn));
         }
-        public bool TryGetField(string nameIn, out RecordField? elementOut)
+        public bool TryGetField(string nameIn, out AbstractRecordField? elementOut)
         {
             for(int i = 0; i < _elements.Length; i++)
             {
@@ -77,14 +78,19 @@ namespace FileDB.Core.Data
         {
             var builder = new StringBuilder();
             foreach (var element in _elements)
-                builder.AppendLine(element.Convert());
+            {
+                if(element.IsIndex)
+                    builder.AppendLine("*"+element.Convert());
+                else
+                    builder.AppendLine(element.Convert());
+            }
             return builder.ToString();
         }
         public override string ToString()
         {
             var builder = new StringBuilder();
             foreach (var element in _elements) 
-                builder.AppendLine(element.ToString());
+                builder.AppendLine(element.Convert());
             return builder.ToString();
         }
     }

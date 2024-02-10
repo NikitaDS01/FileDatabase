@@ -1,9 +1,9 @@
-namespace FileDB.Core.Data.TypeElement
+namespace FileDB.Core.Data.TypeField
 {
-    public class FiledInt : AbstractRecordField
+    public class FieldInt : AbstractRecordField
     {
         private readonly int _value;
-        public FiledInt(string nameIn,int valueIn, bool isIndexIn = false) : base(nameIn, isIndexIn)
+        public FieldInt(string nameIn,int valueIn, bool isIndexIn = false) : base(nameIn, isIndexIn)
         {
             _value = valueIn;
         }
@@ -17,7 +17,7 @@ namespace FileDB.Core.Data.TypeElement
 
         public override bool EqualsField(AbstractRecordField fieldIn)
         {
-            if(!(fieldIn is FiledInt) || fieldIn.Name != this.Name)
+            if(!(fieldIn is FieldInt) || fieldIn.Name != this.Name)
                 return false;
             else
                 return _value == (int)fieldIn.Value;
@@ -25,7 +25,7 @@ namespace FileDB.Core.Data.TypeElement
 
         public override bool LargeField(AbstractRecordField fieldIn)
         {
-            if(!(fieldIn is FiledInt) || fieldIn.Name != this.Name)
+            if(!(fieldIn is FieldInt) || fieldIn.Name != this.Name)
                 return false;
             else
                 return _value > (int)fieldIn.Value;
@@ -33,7 +33,7 @@ namespace FileDB.Core.Data.TypeElement
 
         public override bool LessField(AbstractRecordField fieldIn)
         {
-            if(!(fieldIn is FiledInt) || fieldIn.Name != this.Name)
+            if(!(fieldIn is FieldInt) || fieldIn.Name != this.Name)
                 return false;
             else
                 return _value < (int)fieldIn.Value;

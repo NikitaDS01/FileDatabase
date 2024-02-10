@@ -1,4 +1,4 @@
-namespace FileDB.Core.Data.TypeElement
+namespace FileDB.Core.Data.TypeField
 {
     public class FieldDateTime : AbstractRecordField
     {

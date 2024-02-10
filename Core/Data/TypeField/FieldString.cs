@@ -1,4 +1,4 @@
-namespace FileDB.Core.Data.TypeElement
+namespace FileDB.Core.Data.TypeField
 {
     public class FieldString : AbstractRecordField
     {
@@ -24,12 +24,18 @@ namespace FileDB.Core.Data.TypeElement
 
         public override bool LargeField(AbstractRecordField fieldIn)
         {
-            throw new NotImplementedException();
+            if(!(fieldIn is FieldString) || fieldIn.Name != this.Name)
+                return false;
+            else
+                return _value.CompareTo((string)fieldIn.Value) < 0;
         }
 
         public override bool LessField(AbstractRecordField fieldIn)
         {
-            throw new NotImplementedException();
+            if(!(fieldIn is FieldString) || fieldIn.Name != this.Name)
+                return false;
+            else
+                return _value.CompareTo((string)fieldIn.Value) > 0;
         }
     }
 }
