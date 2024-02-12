@@ -1,5 +1,7 @@
 ﻿using FileDB.Core.Data;
 using FileDB.Core.Data.TypeField;
+using System;
+using System.Collections;
 
 namespace FileDB.Function
 {
@@ -12,7 +14,8 @@ namespace FileDB.Function
             Int = 2,
             Float = 4,
             DateTime = 8,
-            Bool = 16
+            Bool = 16,
+            Array = 32
         }
         public static string ToString(Enum valueIn)
         {
@@ -38,6 +41,8 @@ namespace FileDB.Function
                     return new FieldDateTime(nameIn, Convert.ToDateTime(valueIn), isIndexIn);
                 case TypeValue.Bool:
                     return new FieldBoolean(nameIn, Convert.ToBoolean(valueIn), isIndexIn);
+                case TypeValue.Array:
+                    return new FieldArray(nameIn, Convert.ToInt32(valueIn), isIndexIn);
 
                 default: throw new ArgumentException(nameof(valueIn));
             }
@@ -58,6 +63,8 @@ namespace FileDB.Function
                     return new FieldDateTime(nameIn, (DateTime)valueIn, isIndex);
                 case bool _ when type == typeof(bool):
                     return new FieldBoolean(nameIn, (bool)valueIn, isIndex);
+                case bool _ when type.GetInterfaces().Contains(typeof(ICollection)):
+                    return new FieldArray(nameIn, (ICollection)valueIn, isIndex);
 
                 default: throw new ArgumentException(nameof(valueIn));
             }
@@ -66,12 +73,37 @@ namespace FileDB.Function
         {
             switch (true)
             {
-                case bool _ when typeIn == typeof(string): return true;
-                case bool _ when typeIn == typeof(int): return true;
-                case bool _ when typeIn == typeof(float): return true;
-                case bool _ when typeIn == typeof(DateTime): return true;
-                case bool _ when typeIn == typeof(bool): return true;
+                case bool _ when typeIn == typeof(string): 
+                    return true;
+                case bool _ when typeIn == typeof(int): 
+                    return true;
+                case bool _ when typeIn == typeof(float): 
+                    return true;
+                case bool _ when typeIn == typeof(DateTime): 
+                    return true;
+                case bool _ when typeIn == typeof(bool): 
+                    return true;
+                case bool _ when typeIn.GetInterfaces().Contains(typeof(ICollection)):
+                    return true;
                 default: return false;
+            }
+        }
+        public static object[] GetArrayType(System.Type typeIn, int countIn)
+        {
+            switch (true)
+            {
+                case bool _ when typeIn == typeof(string):
+                    return new string[countIn];
+                case bool _ when typeIn == typeof(int):
+                    return new int[countIn];
+                case bool _ when typeIn == typeof(float):
+                    return new float[countIn];
+                case bool _ when typeIn == typeof(DateTime):
+                    return new DateTime[countIn];
+                case bool _ when typeIn == typeof(bool):
+                    return new bool[countIn];
+
+                default: throw new ArgumentException(nameof(valueIn));
             }
         }
     }

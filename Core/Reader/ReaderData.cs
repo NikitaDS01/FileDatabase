@@ -15,6 +15,9 @@ namespace FileDB.Core.Reader
         {
             string[] rows = textIn.Split(END_ROW);
             var builder = new RecordBuilder();
+            FieldArray array = null!;
+            int count = 0;
+
             for(int index = 0; index < rows.Length; index++)
             {
                 if (string.IsNullOrEmpty(rows[index]) || 
@@ -24,8 +27,24 @@ namespace FileDB.Core.Reader
                     continue;
                 }
                 var field = WriteString(rows[index]);
-                if(field != null)
+                if (field == null)
+                    continue;
+
+                if(field is FieldArray)
+                {
+                    array = field as FieldArray;
+                    count = array.Length;
+                }
+
+                if (count == 0)
+                {
                     builder.Add(field);
+                }
+                else
+                {
+                    array.AddField(field.Value);
+                    count--;
+                }
             }
             return builder.GetRecord();            
         } 
