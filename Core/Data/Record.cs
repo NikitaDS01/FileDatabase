@@ -9,7 +9,7 @@ namespace FileDB.Core.Data
         private readonly AbstractRecordField[] _elements;
         private readonly int _indexElement;
 
-        public Record(AbstractRecordField[] elements)
+        public Record(params AbstractRecordField[] elements)
         {
             _elements = elements;
             _indexElement = -1;
@@ -31,8 +31,7 @@ namespace FileDB.Core.Data
         {
             get => _elements[index];
         }
-        
-
+    
         public IEnumerator GetEnumerator()
         {
             return _elements.GetEnumerator();
@@ -74,6 +73,43 @@ namespace FileDB.Core.Data
             elementOut = null;
             return false;
         }
+        public bool TryGetField<Out>(string nameIn, out Out? elementOut) where Out : AbstractRecordField
+        {
+            elementOut = null;
+            for(int i = 0; i < _elements.Length; i++)
+            {
+                if(_elements[i].Name == nameIn && _elements[i] is Out)
+                {
+                    elementOut = (Out)_elements[i];
+                    return true;
+                }
+            }
+            return false;
+        }
+        public bool Modification(Record newRecordIn)
+        {
+            if(!IndexElement.EqualsField(newRecordIn.IndexElement))
+                return false;
+
+            var newRecord = this;
+            AbstractRecordField? tmpField;
+            for(int index = 0; index < newRecord.Length; index++)
+            {
+                var field = newRecord[index];
+                if(field.IsIndex)
+                    continue;
+                
+                if(newRecordIn.TryGetField(field.Name, out tmpField))
+                    newRecord._elements[index] = tmpField!;
+                else
+                    return false;
+            }
+            for(int index = 0; index < newRecord.Length; index++)
+            {
+                _elements[index] = newRecord[index];
+            }
+            return true;
+        }
         public string ConvertData()
         {
             var builder = new StringBuilder();
@@ -88,10 +124,7 @@ namespace FileDB.Core.Data
         }
         public override string ToString()
         {
-            var builder = new StringBuilder();
-            foreach (var element in _elements) 
-                builder.AppendLine(element.Convert());
-            return builder.ToString();
+            return ConvertData();
         }
     }
 }

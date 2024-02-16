@@ -23,10 +23,10 @@ namespace FileDB.Function
             var type = value.GetType();
             if(value == null)
                 return false;
-            if(!ConvertEnum.IsDefaultValue(type))
+            if(!FunctionField.TypeIsDefault(type))
                 return false;
 
-            _elements.Add(ConvertEnum.ValueToField(name, value, isIndex));            
+            _elements.Add(FunctionField.ValueToField(name, value, isIndex));            
             return true;
         }
         public Record GetRecord()

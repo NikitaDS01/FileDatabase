@@ -28,7 +28,28 @@ namespace FileDB
             _databaseDirectory = new DirectoryInfo(settingIn.Path);
         }
         public Table this[string name] => _rootTables[name];
-        
+        public IReadOnlyCollection<Table> RootTables => _rootTables.Values;
+
+        public bool ContainTable(string nameIn)
+        {
+            Table table;
+            foreach(var root in RootTables)
+            {
+                if(root.TryGetTable(nameIn, out table!))
+                    return true;
+            }
+            return false;
+        } 
+        public bool TryGetTable(string nameIn, out Table? tableOut)
+        {
+            tableOut = null;
+            foreach(var root in RootTables)
+            {
+                if(root.TryGetTable(nameIn, out tableOut))
+                    return true;
+            }
+            return false;
+        }
         public bool ContainRootTable(string nameIn)
         {
             return _rootTables.ContainsKey(nameIn);
@@ -47,6 +68,9 @@ namespace FileDB
         }
         public void Initialize()
         {
+            if(_isLoadDatabase)
+                throw new Exception("Таблица уже создана");
+
             DirectoryInfo[] directoryTables = _databaseDirectory.GetDirectories();
             FileInfo[] files = this.GetFileFDB(directoryTables);
             foreach(var file in files)
@@ -57,10 +81,11 @@ namespace FileDB
                 Console.WriteLine(file.Name);
                 var record = this.ReadData(file.FullName);
                 var property = FileSerializer.Deserialize<PropertyTable>(record);
-                var table = new Table(file.Directory, property);
+                var table = new Table(file.Directory!, property);
                 _rootTables.Add(property.NameTable, table);
                 table.Initialize();
             }
+            _isLoadDatabase = true;
         }
        
         private FileInfo[] GetFileFDB(DirectoryInfo[] directories)

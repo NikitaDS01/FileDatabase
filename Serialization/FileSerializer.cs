@@ -39,7 +39,7 @@ namespace FileDB.Serialization
                 var name = setting.NameProperty;
                 var property = setting.Property;
                 var isIndex = setting.IsIndex;
-                if (ConvertEnum.IsDefaultValue(property.PropertyType))
+                if (FunctionField.TypeIsDefault(property.PropertyType))
                     builder.TryAdd(name, property.GetValue(objectIn), isIndex);
             }
             return builder.GetRecord();

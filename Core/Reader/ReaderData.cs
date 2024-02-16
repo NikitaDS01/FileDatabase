@@ -16,7 +16,7 @@ namespace FileDB.Core.Reader
             string[] rows = textIn.Split(END_ROW);
             var builder = new RecordBuilder();
             FieldArray array = null!;
-            int count = 0;
+            int countArray = 0;
 
             for(int index = 0; index < rows.Length; index++)
             {
@@ -33,17 +33,20 @@ namespace FileDB.Core.Reader
                 if(field is FieldArray)
                 {
                     array = field as FieldArray;
-                    count = array.Length;
+                    countArray = array.Length;
+                    continue;
                 }
 
-                if (count == 0)
+                if (countArray == 0)
                 {
                     builder.Add(field);
                 }
                 else
                 {
                     array.AddField(field.Value);
-                    count--;
+                    countArray--;
+                    if(countArray == 0)
+                        builder.Add(array);
                 }
             }
             return builder.GetRecord();            
@@ -84,7 +87,7 @@ namespace FileDB.Core.Reader
                 return null;
             }
 
-            return ConvertEnum.StringToField(data[0], data[1], data[2], isIndex);
+            return FunctionField.StringToField(data[0], data[1], data[2], isIndex);
         }
     }
 }
