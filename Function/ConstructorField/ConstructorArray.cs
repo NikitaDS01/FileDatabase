@@ -1,27 +1,22 @@
-using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using FileDB.Core.Data.TypeField;
 
 namespace FileDB.Function.ConstructorField
 {
-    public class ConstructorText : IConstructorField
+    public class ConstructorArray : IConstructorField
     {
-        private const string TYPE = "Text";
+        private const string TYPE = "Array";
         public IList GetArrayType(int countIn)
         {
-            return new string[countIn];
+            return new object[countIn];
         }
 
         public bool IsDefaultValue(Type typeIn)
         {
-            if(typeIn == typeof(string))
+            if(typeIn.GetInterfaces().Contains(typeof(IList)))
                 return true;
             return false;
         }
-
         public bool IsDefaultValue(string typeIn)
         {
             if(typeIn == TYPE)
@@ -31,12 +26,12 @@ namespace FileDB.Function.ConstructorField
 
         public AbstractRecordField StringToField(string nameIn, string valueIn, bool isIndexIn)
         {
-            return new FieldString(nameIn, valueIn, isIndexIn);
+            return new FieldArray(nameIn, Convert.ToInt32(valueIn), isIndexIn);
         }
 
         public AbstractRecordField ValueToField(string nameIn, object valueIn, bool isIndex)
         {
-            return new FieldString(nameIn, (string)valueIn, isIndex);
+            return new FieldArray(nameIn, (IList)valueIn, isIndex);
         }
     }
 }

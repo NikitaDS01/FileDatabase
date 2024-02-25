@@ -28,7 +28,7 @@ namespace FileDB.Core.Data.TypeField
             _count = objects.Count;
         }
 
-        public override object Value => (IList)_value;
+        public override object Value => _value;
         public int Length => _length; 
         public void AddField(object field)
         {

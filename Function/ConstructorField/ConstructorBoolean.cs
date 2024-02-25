@@ -1,27 +1,22 @@
-using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using FileDB.Core.Data.TypeField;
 
 namespace FileDB.Function.ConstructorField
 {
-    public class ConstructorText : IConstructorField
+    public class ConstructorBoolean : IConstructorField
     {
-        private const string TYPE = "Text";
+        private const string TYPE = "Bool";
         public IList GetArrayType(int countIn)
         {
-            return new string[countIn];
+            return new bool[countIn];
         }
 
         public bool IsDefaultValue(Type typeIn)
         {
-            if(typeIn == typeof(string))
+            if(typeIn == typeof(bool))
                 return true;
             return false;
         }
-
         public bool IsDefaultValue(string typeIn)
         {
             if(typeIn == TYPE)
@@ -31,12 +26,12 @@ namespace FileDB.Function.ConstructorField
 
         public AbstractRecordField StringToField(string nameIn, string valueIn, bool isIndexIn)
         {
-            return new FieldString(nameIn, valueIn, isIndexIn);
+            return new FieldBoolean(nameIn, Convert.ToBoolean(valueIn), isIndexIn);
         }
 
         public AbstractRecordField ValueToField(string nameIn, object valueIn, bool isIndex)
         {
-            return new FieldString(nameIn, (string)valueIn, isIndex);
+            return new FieldBoolean(nameIn, (bool)valueIn, isIndex);
         }
     }
 }

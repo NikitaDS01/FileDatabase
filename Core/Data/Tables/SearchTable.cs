@@ -128,5 +128,13 @@ namespace FileDB.Core.Data.Tables
             var list = this.GiveFilterRecord(searchIn,parameterIn);
             return list.ToArray();
         }
+        public Record[] Select(RecordSearch searchIn)
+        {
+            return this.Select(searchIn, new ParameterSearch());
+        }
+        public Record? SelectOne(RecordSearch searchIn)
+        {
+            return this.GiveOneRecord(searchIn);
+        }
     }
 }

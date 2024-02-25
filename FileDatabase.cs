@@ -87,7 +87,15 @@ namespace FileDB
             }
             _isLoadDatabase = true;
         }
-       
+        public Record? LinkRecord(RecordLink linkIn)
+        {
+            Table? table;
+            if(!TryGetTable(linkIn.TableName, out table))
+                return null;
+            
+           return table!.LinkRecord(linkIn);
+        }
+
         private FileInfo[] GetFileFDB(DirectoryInfo[] directories)
         {
             var files = new FileInfo[directories.Length];

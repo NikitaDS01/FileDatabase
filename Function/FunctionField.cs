@@ -18,7 +18,8 @@ namespace FileDB.Function
                 new ConstructorInt(),
                 new ConstructorText(),
                 new ConstructorFloat(),
-                new ConstructorDateTime()
+                new ConstructorDateTime(),
+                new ConstructorLink()
             };
         public static bool TypeIsDefault(System.Type typeIn)
         {

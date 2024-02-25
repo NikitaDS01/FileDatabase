@@ -33,7 +33,7 @@ namespace FileDB.Core.Data.Tables
 
         #region Property
         
-        public FileInfo[] Files => _directoryTable.GetFiles();
+        public FileInfo[] Files => _directoryTable.GetFiles("*.txt");
         public DirectoryInfo[] Directories => _directoryTable.GetDirectories();
         public PropertyTable Property => this.GetProperty();
         public bool IsActual => _directoryTable.LastWriteTime == _lastUpdate;
@@ -197,7 +197,17 @@ namespace FileDB.Core.Data.Tables
             }
             _isInit = true;
         }
-        
+        public Record? LinkRecord(RecordLink linkIn)
+        {
+            var info = new FileInfo(
+                FunctionFile.FullFileName(_directoryTable.FullName, 
+                    linkIn.FullName, TypeFormat.TXT)
+            );
+
+            if(info.Exists)
+                return ReadData(info.FullName);
+            return null;
+        }
         #endregion
 
         private void UpdatePropertyTable()

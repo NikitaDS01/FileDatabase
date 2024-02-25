@@ -1,15 +1,12 @@
-using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using FileDB.Core.Data;
 using FileDB.Core.Data.TypeField;
 
 namespace FileDB.Function.ConstructorField
 {
-    public class ConstructorText : IConstructorField
+    public class ConstructorLink : IConstructorField
     {
-        private const string TYPE = "Text";
+        private const string TYPE = "Link";
         public IList GetArrayType(int countIn)
         {
             return new string[countIn];
@@ -17,11 +14,10 @@ namespace FileDB.Function.ConstructorField
 
         public bool IsDefaultValue(Type typeIn)
         {
-            if(typeIn == typeof(string))
+            if(typeIn == typeof(RecordLink))
                 return true;
             return false;
         }
-
         public bool IsDefaultValue(string typeIn)
         {
             if(typeIn == TYPE)
@@ -31,12 +27,13 @@ namespace FileDB.Function.ConstructorField
 
         public AbstractRecordField StringToField(string nameIn, string valueIn, bool isIndexIn)
         {
-            return new FieldString(nameIn, valueIn, isIndexIn);
+            string[] split = valueIn.Split(' ');
+            return new FieldLinkObject(nameIn, split[0], split[1]);
         }
 
         public AbstractRecordField ValueToField(string nameIn, object valueIn, bool isIndex)
         {
-            return new FieldString(nameIn, (string)valueIn, isIndex);
-        }
+            return new FieldLinkObject(nameIn, (RecordLink)valueIn);
+        }   
     }
 }
