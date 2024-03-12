@@ -4,26 +4,23 @@ namespace FileDB.Core.Data.TypeField
 {
     public class FieldLinkObject : AbstractRecordField
     {
-        private string _tableName;
-        private string _number;
-        public FieldLinkObject(string nameIn, string tableIn, string numberIn) 
+        private RecordLink _link;
+        public FieldLinkObject(string nameIn, string pathIn, string numberIn) 
             : base(nameIn, false)
         {
-            _tableName = tableIn;
-            _number = numberIn;            
+            _link = new RecordLink(pathIn);      
         }
         public FieldLinkObject(string nameIn, RecordLink linkIn)
             : base(nameIn, false)
         {
-            _tableName = linkIn.TableName;
-            _number = linkIn.Number;
+            _link = linkIn;
         }
-        public RecordLink Link => new RecordLink(_tableName, _number);
+        public RecordLink Link => _link;
         public override object Value => this.Link;
 
         public override string Convert()
         {
-            return $"[{Name}][Link]:[{_tableName} {_number}]";
+            return $"[{Name}][Link]:[{_link.FullName}]";
         }
 
         public override bool EqualsField(AbstractRecordField fieldIn)

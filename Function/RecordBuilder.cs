@@ -6,9 +6,11 @@ namespace FileDB.Function
     public class RecordBuilder
     {
         private readonly List<AbstractRecordField> _elements;
+        private readonly List<RecordLink> _links;
         public RecordBuilder()
         {
             _elements = new List<AbstractRecordField>();
+            _links = new List<RecordLink>();
         }
         public void Add(AbstractRecordField fieldIn)
         {
@@ -29,9 +31,16 @@ namespace FileDB.Function
             _elements.Add(FunctionField.ValueToField(name, value, isIndex));            
             return true;
         }
-        public Record GetRecord()
+        public void AddLink(RecordLink linkIn)
         {
-            return new Record(_elements.ToArray());
+            _links.Add(linkIn);
+        }
+        public Record GetRecord()
+        { 
+            var record = new Record(_elements.ToArray());
+            for(int i =0; i < _links.Count; i++)
+                record.AddLink(_links[i]);
+            return record;
         }
     }
 }

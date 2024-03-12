@@ -32,7 +32,7 @@ namespace FileDB.Core.Reader
 
                 if(field is FieldArray)
                 {
-                    array = field as FieldArray;
+                    array = (field as FieldArray)!;
                     countArray = array.Length;
                     continue;
                 }

@@ -16,6 +16,7 @@ namespace FileDB.Function
             switch (formatIn)
             {
                 case TypeFormat.TXT: format = ".txt"; break;
+                case TypeFormat.TBL: format = ".tbl"; break;
                 case TypeFormat.FDB: format = ".fdb"; break;
             }
             return nameIn + format;

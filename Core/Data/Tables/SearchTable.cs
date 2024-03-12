@@ -136,5 +136,11 @@ namespace FileDB.Core.Data.Tables
         {
             return this.GiveOneRecord(searchIn);
         }
+        public Record? LinkRecord(RecordLink linkIn)
+        {
+            if(System.IO.File.Exists(linkIn.FullName))
+                return ReadData(linkIn.FullName);
+            return null;
+        }
     }
 }

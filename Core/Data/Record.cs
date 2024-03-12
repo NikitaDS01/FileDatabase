@@ -8,10 +8,12 @@ namespace FileDB.Core.Data
     {
         private readonly AbstractRecordField[] _elements;
         private readonly int _indexElement;
+        private readonly List<RecordLink> _links;
 
         public Record(params AbstractRecordField[] elements)
         {
             _elements = elements;
+            _links = new List<RecordLink>();
             _indexElement = -1;
             for(int i = 0; i < _elements.Length; i++)
             {
@@ -109,6 +111,13 @@ namespace FileDB.Core.Data
                 _elements[index] = newRecord[index];
             }
             return true;
+        }
+        public void AddLink(RecordLink linkIn)
+        {
+            if(!System.IO.File.Exists(linkIn.FullName))
+                throw new ArgumentNullException(nameof(linkIn));
+
+            _links.Add(linkIn);
         }
         public string ConvertData()
         {

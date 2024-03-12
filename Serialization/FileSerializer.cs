@@ -91,7 +91,7 @@ namespace FileDB.Serialization
                 {
                     if (attribute is NonSerializeFileAttribute)
                         nonSerialize = true;
-                    if (attribute is SerializeNameFileAttribute attributeName)
+                    if (attribute is SerializeNameRecordAttribute attributeName)
                         settings.NameProperty = attributeName.Name;
                     if(attribute is SerializeIndexAttribute)
                         settings.IsIndex = true;

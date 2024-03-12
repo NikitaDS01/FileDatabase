@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using FileDB.Core.File;
 using FileDB.Core.Reader;
@@ -12,23 +13,21 @@ namespace FileDB.Core.Data.Tables
 {
     public partial class Table
     {
-        private const string SETTING_TABLE = "*.fdb";
         private readonly DirectoryInfo _directoryTable;
         private readonly string _name;
         private readonly DateTime _lastUpdate;
         private readonly Dictionary<string, Table> _childTables;
-        private int _countRecord;
+        private readonly bool _isRecordNameTable;
         private bool _isInit = false;
-
 
         public Table(DirectoryInfo directoryIn, PropertyTable propertyIn)
         {
             _childTables = new Dictionary<string, Table>();
             _directoryTable = directoryIn;
-            _countRecord = propertyIn.CountRecord;
             _name = propertyIn.NameTable;
             _lastUpdate = propertyIn.LastUpdate;
             _isInit = false;
+            _isRecordNameTable = propertyIn.IsNameTable;
         }
 
         #region Property
@@ -40,8 +39,9 @@ namespace FileDB.Core.Data.Tables
         public string Name => _name;
         public string Path => _directoryTable.FullName;
         public FileInfo PropertyFileFBD => new FileInfo(FunctionFile.FullFileName(_directoryTable.FullName, 
-                _name, TypeFormat.FDB));
+                _name, TypeFormat.TBL));
         public IReadOnlyCollection<Table> ChildTables => _childTables.Values;
+        public int CountRecord => Files.Length;
 
         #endregion
 
@@ -51,13 +51,11 @@ namespace FileDB.Core.Data.Tables
         {
             foreach(var record in recordsIn)
             {
-                string path = FunctionFile.FullFileName(_directoryTable.FullName,
-                    GetNameFile(record), File.TypeFormat.TXT); 
-                    
+                string path = GetNameFile(record); 
+
                 var writer = new WriterFileTxt(path);
                 string data = WriterData.Write(record);
                 writer.Write(data);
-                _countRecord++;
             }
             UpdatePropertyTable();
         }
@@ -122,8 +120,7 @@ namespace FileDB.Core.Data.Tables
             {
                 string path = FunctionFile.FullFileName(_directoryTable.FullName,
                     GetNameFile(listRecord[index]), File.TypeFormat.TXT);
-                this.DeleteData(path);   
-                _countRecord--;      
+                this.DeleteData(path);        
             }
             UpdatePropertyTable();
             return listRecord.Count;
@@ -134,11 +131,9 @@ namespace FileDB.Core.Data.Tables
             if(record == null)
                 return;
 
-            string path = FunctionFile.FullFileName(_directoryTable.FullName,
-                GetNameFile(record), File.TypeFormat.TXT);
+            string path = GetNameFile(record); 
             Console.WriteLine(path);
             this.DeleteData(path);  
-            _countRecord--;
             UpdatePropertyTable();
         }
 
@@ -164,17 +159,32 @@ namespace FileDB.Core.Data.Tables
             }
             return false;
         }
+        public Table CreateChildTable(PropertyTable propertyIn)
+        {
+            DirectoryInfo info = _directoryTable.CreateSubdirectory(propertyIn.NameTable);
+            Record record = FileSerializer.Serialize<PropertyTable>(propertyIn);
+            this.WriteData(FunctionFile.FullFileName(info.FullName, 
+                propertyIn.NameTable, TypeFormat.TBL), record);
+            
+            var table = new Table(info, propertyIn);
+            _childTables.Add(table.Name, table);
+            return table;
+        }
         public Table CreateChildTable(string nameIn)
         {
             var property = new PropertyTable() {NameTable = nameIn};
-            DirectoryInfo info = _directoryTable.CreateSubdirectory(nameIn);
-            Record record = FileSerializer.Serialize<PropertyTable>(property);
-            this.WriteData(FunctionFile.FullFileName(info.FullName, 
-                property.NameTable, TypeFormat.FDB), record);
-            
-            var table = new Table(info, property);
-            _childTables.Add(table.Name, table);
-            return table;
+            return this.CreateChildTable(property);
+        }
+        public Table CreateChildRecord<In>(In objectIn)
+        {
+            var record = FileSerializer.Serialize(objectIn);
+            return this.CreateChildRecord(record);
+        }
+        public Table CreateChildRecord(Record recordIn)
+        {
+            var path = this.GetNameFile(recordIn);
+            var property = new PropertyTable{NameTable=System.IO.Path.GetFileName(path)};
+            return this.CreateChildTable(property);
         }
         public void Initialize()
         {
@@ -182,13 +192,11 @@ namespace FileDB.Core.Data.Tables
                 throw new Exception("Таблица уже создана");
 
             DirectoryInfo[] directoryTables = _directoryTable.GetDirectories();
-            FileInfo[] files = this.GetFileFDB(directoryTables);
+            FileInfo[] files = this.GetFileTable(directoryTables);
             foreach(var file in files)
             {
                 if(file == null)
-                    throw new ArgumentNullException(nameof(file));
-
-                Console.WriteLine(file.Name);
+                    continue;
                 var record = this.ReadData(file.FullName);
                 var property = FileSerializer.Deserialize<PropertyTable>(record);
                 var table = new Table(file.Directory!, property);
@@ -197,17 +205,7 @@ namespace FileDB.Core.Data.Tables
             }
             _isInit = true;
         }
-        public Record? LinkRecord(RecordLink linkIn)
-        {
-            var info = new FileInfo(
-                FunctionFile.FullFileName(_directoryTable.FullName, 
-                    linkIn.FullName, TypeFormat.TXT)
-            );
-
-            if(info.Exists)
-                return ReadData(info.FullName);
-            return null;
-        }
+        
         #endregion
 
         private void UpdatePropertyTable()
@@ -217,17 +215,25 @@ namespace FileDB.Core.Data.Tables
         }
         private string GetNameFile(Record recordIn)
         {
+            StringBuilder builder = new StringBuilder();
+            if(this._isRecordNameTable)
+                builder.Append(_name+'_');
+            
             if(recordIn.IsIndex)
-                return _name + '_' + recordIn.IndexElement.Value;
+                builder.Append(recordIn.IndexElement.Value);
             else
-                return _name + '_' + _countRecord.ToString();
+                builder.Append(CountRecord);
+
+            return FunctionFile.FullFileName(_directoryTable.FullName,
+                    builder.ToString(), File.TypeFormat.TXT); 
         }
         private PropertyTable GetProperty()
         {
-            var property = new PropertyTable { CountRecord = _countRecord, NameTable = _name,
-                LastUpdate = DateTime.Now};
+            var property = new PropertyTable { NameTable = _name,
+                LastUpdate = DateTime.Now, IsNameTable= _isRecordNameTable};
             return property;
         }
+        
         private void WriteData(string pathIn, Record recordIn)
         {
             var writer = new WriterFileTxt(pathIn);
@@ -250,6 +256,27 @@ namespace FileDB.Core.Data.Tables
             
             info.Delete();
         }
+        private void AppendData(string pathIn, string value)
+        {
+            var writer = new AppendFileText(pathIn);
+            writer.Write(value);
+        }
+
+        private FileInfo[] GetFileTable(DirectoryInfo[] directories)
+        {
+            var files = new FileInfo[directories.Length];
+
+            for (int index = 0; index < directories.Length; index++)
+            {
+                var directory = directories[index];
+                var tmp = directory.GetFiles(FileDatabase.SETTING_TABLE, SearchOption.TopDirectoryOnly);
+                if (tmp.Length == 0)
+                    continue;
+                files[index] = tmp.First();
+            }
+            return files;
+        }
+
         private List<Record> GiveAllRecord(ParameterSearch parameterIn)
         {
             var files = this.Files;
@@ -301,16 +328,6 @@ namespace FileDB.Core.Data.Tables
             }
             return null;
         }
-        private FileInfo[] GetFileFDB(DirectoryInfo[] directories)
-        {
-            var files = new FileInfo[directories.Length];
-            for(int index = 0; index < directories.Length;index++)
-            {
-                var directory = directories[index];
-                var tmp = directory.GetFiles(SETTING_TABLE, SearchOption.TopDirectoryOnly);
-                files[index] = tmp.First();
-            }
-            return files;
-        }
+        
     }
 }

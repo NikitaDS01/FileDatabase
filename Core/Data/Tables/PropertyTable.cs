@@ -2,24 +2,21 @@ namespace FileDB.Core.Data.Tables
 {
     public struct PropertyTable
     {
-        public int CountRecord { get; set;}
-        public string NameTable { get; set;}
-        public DateTime LastUpdate {get;set;}
-        //public bool IsObjectId {get;set;}
+        public string NameTable { get; set;} = string.Empty;
+        public DateTime LastUpdate {get;set;} = DateTime.Now;
+        public bool IsNameTable {get;set;} = true;
         public PropertyTable()
         {
-            CountRecord = 0;
             NameTable = string.Empty;
             LastUpdate = DateTime.Now;
-          //  IsObjectId = false;
+            IsNameTable = true;
         }
-        public PropertyTable(int indexIn, string name, 
-            DateTime lastUpdateIn, bool isObjectIdIn)
+        public PropertyTable(string name, 
+            DateTime lastUpdateIn, bool isNameTableIn)
         {
-            CountRecord = indexIn;
             NameTable = name;
             LastUpdate = lastUpdateIn;
-            //IsObjectId = isObjectIdIn;
+            IsNameTable = isNameTableIn;
         }
     }
 }

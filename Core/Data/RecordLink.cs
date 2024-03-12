@@ -2,18 +2,31 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using FileDB.Core.Reader;
 
 namespace FileDB.Core.Data
 {
     public class RecordLink
     {
-        public string TableName {get;private set;}
-        public string Number {get;private set;}
-        public RecordLink(string tableIn, string numberIn) 
+        public FileInfo LinkFile {get;private set;}
+        public RecordLink(string pathIn) 
         {
-            TableName = tableIn;
-            Number = numberIn;            
+            LinkFile = new FileInfo(pathIn);
         }
-        public string FullName => string.Format("{0}_{1}", TableName, Number);
+        public bool Exists => LinkFile.Exists;
+        public string FullName => LinkFile.FullName;
+        public Record? GetRecord(RecordLink linkIn)
+        {
+            if(!this.Exists)
+                return null;
+                
+            var reader = new ReaderFileTxt(this.FullName);
+            string data = reader.Read();
+            return ReaderData.Read(data);
+        }
+        public override string ToString()
+        {
+            return FullName;
+        }
     }
 }
