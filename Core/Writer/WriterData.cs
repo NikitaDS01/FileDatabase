@@ -1,4 +1,5 @@
 ﻿using FileDB.Core.Data;
+using FileDB.Core.File;
 
 namespace FileDB.Core.Writer
 {

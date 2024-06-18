@@ -8,6 +8,7 @@ namespace FileDB.Core.Data
 {
     public class RecordLink
     {
+        public static RecordLink Empty => new RecordLink("Null");
         public FileInfo LinkFile {get;private set;}
         public RecordLink(string pathIn) 
         {
@@ -21,12 +22,12 @@ namespace FileDB.Core.Data
                 return null;
                 
             var reader = new ReaderFileTxt(this.FullName);
-            string data = reader.Read();
+            var data = reader.Read();
             return ReaderData.Read(data);
         }
         public override string ToString()
         {
-            return FullName;
+            return LinkFile.FullName;
         }
     }
 }

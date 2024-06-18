@@ -10,8 +10,24 @@ namespace FileDB.Core.Data
         private readonly int _indexElement;
         private readonly List<RecordLink> _links;
 
+        public Record(FileInfo? infoIn, params AbstractRecordField[] elements)
+        {
+            File = infoIn;
+            _elements = elements;
+            _links = new List<RecordLink>();
+            _indexElement = -1;
+            for (int i = 0; i < _elements.Length; i++)
+            {
+                if (_elements[i].IsIndex)
+                {
+                    _indexElement = i;
+                    break;
+                }
+            }
+        }
         public Record(params AbstractRecordField[] elements)
         {
+            File = null;
             _elements = elements;
             _links = new List<RecordLink>();
             _indexElement = -1;
@@ -24,7 +40,9 @@ namespace FileDB.Core.Data
                 }
             }
         }
-
+        
+        public FileInfo? File { get; set; }
+        public string Path => File.FullName;
         public int Length => _elements.Length;
         public bool IsIndex => _indexElement != -1;
         public AbstractRecordField IndexElement => _elements[_indexElement];

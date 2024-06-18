@@ -1,6 +1,7 @@
 ﻿using FileDB.Function;
 using FileDB.Core.Data;
 using FileDB.Core.Data.TypeField;
+using FileDB.Core.File;
 
 namespace FileDB.Core.Reader
 {
@@ -11,9 +12,10 @@ namespace FileDB.Core.Reader
         private const char BEGIN_DATA = '[';
         private const char FIELD_INDEX = '*';
         private const int COUNT_MARKUP = 3;
-        public static Record Read(string textIn)
+        public static Record Read(DataFile dataIn)
         {
-            string[] rows = textIn.Split(END_ROW);
+            string text = dataIn.Coding;
+            string[] rows = text.Split(END_ROW);
             var builder = new RecordBuilder();
             FieldArray array = null!;
             int countArray = 0;
@@ -26,6 +28,7 @@ namespace FileDB.Core.Reader
                 {
                     continue;
                 }
+                //var oneChar = rows[index][0];
                 var field = WriteString(rows[index]);
                 if (field == null)
                     continue;
@@ -49,6 +52,7 @@ namespace FileDB.Core.Reader
                         builder.Add(array);
                 }
             }
+            builder.SetFile(dataIn.Path);
             return builder.GetRecord();            
         } 
         private static AbstractRecordField? WriteString(string rowIn)

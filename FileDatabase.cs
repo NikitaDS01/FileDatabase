@@ -5,7 +5,9 @@ using FileDB.Core.Reader;
 using FileDB.Core.Writer;
 using FileDB.Function;
 using FileDB.Serialization;
+using System.IO;
 using System.Reflection;
+using System.Reflection.Metadata;
 
 namespace FileDB
 {
@@ -44,8 +46,16 @@ namespace FileDB
 
         public string Name => _name;
         public Table this[string name] => _rootTables[name];
+        public string Path => _databaseDirectory.FullName;
         public IReadOnlyCollection<Table> RootTables => _rootTables.Values;
+        public DateTime CreateDateTime => _createDateTime;
 
+        public Table GetRootTable(string tableNameIn)
+        {
+            if (!ContainRootTable(tableNameIn))
+                throw new ArgumentNullException(nameof(tableNameIn));
+            return _rootTables[tableNameIn];
+        }
         public bool ContainTable(string nameIn)
         {
             Table table;
@@ -126,7 +136,22 @@ namespace FileDB
             }
             _isLoadDatabase = true;
         }
-       
+
+        public Record[] SelectRecord(string recordIn)
+        {
+            FileInfo[] files = _databaseDirectory.GetFiles("*.txt", SearchOption.AllDirectories);
+            int count = 0;
+            List<Record> list = new List<Record>();
+            for (int index = 0; index < files.Length; index++)
+            {
+                var reader = new ReaderFileTxt(files[index].FullName);
+                var data = reader.Read();
+                if (data.Coding.Contains(recordIn))
+                    list.Add(this.ReadData(files[index].FullName));
+            }
+            return list.ToArray();
+        }
+
         /// <summary>
         /// Возвращает запись, по ссылочной записи
         /// </summary>
@@ -153,8 +178,8 @@ namespace FileDB
         private Record ReadData(string pathIn)
         {
             var reader = new ReaderFileTxt(pathIn);
-            string data = reader.Read();
-            if(string.IsNullOrEmpty(data))
+            var data = reader.Read();
+            if(string.IsNullOrEmpty(data.Coding))
                 throw new ArgumentNullException(nameof(pathIn));
             return ReaderData.Read(data);
         }

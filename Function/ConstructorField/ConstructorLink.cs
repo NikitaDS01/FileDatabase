@@ -28,7 +28,7 @@ namespace FileDB.Function.ConstructorField
         public AbstractRecordField StringToField(string nameIn, string valueIn, bool isIndexIn)
         {
             string[] split = valueIn.Split(' ');
-            return new FieldLinkObject(nameIn, split[0], split[1]);
+            return new FieldLinkObject(nameIn, split[0]);
         }
 
         public AbstractRecordField ValueToField(string nameIn, object valueIn, bool isIndex)

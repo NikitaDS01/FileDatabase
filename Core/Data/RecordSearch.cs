@@ -14,7 +14,8 @@ namespace FileDB.Core.Data
         {
             Equals = 1,
             Large = 2,
-            Less = 4
+            Less = 4,
+            NotEquals = 8
         }
         private struct FieldSearch
         {
@@ -92,6 +93,7 @@ namespace FileDB.Core.Data
                         case 3: if(!recordField.LessField(tmpField!)) return false; break;
                         case 4: if(!recordField.LessAndEqualsField(tmpField!)) return false; break;
                         case 5: if(!recordField.LargeAndEqualsField(tmpField!)) return false; break;
+                        case 8: if(recordField.Equals(tmpField!)) return false; break;
                     }
                 }
             }

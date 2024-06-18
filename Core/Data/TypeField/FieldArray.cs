@@ -1,4 +1,4 @@
-﻿using FileDB.Function;
+﻿ using FileDB.Function;
 using System.Collections;
 using System.Text;
 
@@ -18,6 +18,13 @@ namespace FileDB.Core.Data.TypeField
         public FieldArray(string nameIn, IList objects, bool isIndexIn = false)
             : base(nameIn, isIndexIn)
         {
+            _count = objects.Count;
+            _length = objects.Count;
+            if (objects.Count == 0)
+            {
+                _value = null;
+                return;
+            }
             var type = objects[0].GetType();
             _value = FunctionField.GetArrayType(type, objects.Count);
             
@@ -25,7 +32,7 @@ namespace FileDB.Core.Data.TypeField
             {
                 _value[index] = objects[index];
             }
-            _count = objects.Count;
+            
         }
 
         public override object Value => _value;
@@ -77,6 +84,8 @@ namespace FileDB.Core.Data.TypeField
         {
             StringBuilder builder = new StringBuilder();
             builder.AppendLine($"[{Name}][Array]:[{Length}]");
+            if(_value == null)
+                return builder.ToString();
             for (int index = 0; index < _value.Count; index++)
             {
                 var name = $"{Name}{index}";

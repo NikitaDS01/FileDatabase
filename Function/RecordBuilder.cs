@@ -7,10 +7,16 @@ namespace FileDB.Function
     {
         private readonly List<AbstractRecordField> _elements;
         private readonly List<RecordLink> _links;
+        private FileInfo? _fileRecord;
         public RecordBuilder()
         {
+            _fileRecord = null;
             _elements = new List<AbstractRecordField>();
             _links = new List<RecordLink>();
+        }
+        public void SetFile(FileInfo fileIn)
+        {
+            _fileRecord = fileIn;
         }
         public void Add(AbstractRecordField fieldIn)
         {
@@ -37,7 +43,7 @@ namespace FileDB.Function
         }
         public Record GetRecord()
         { 
-            var record = new Record(_elements.ToArray());
+            var record = new Record(_fileRecord, _elements.ToArray());
             for(int i =0; i < _links.Count; i++)
                 record.AddLink(_links[i]);
             return record;

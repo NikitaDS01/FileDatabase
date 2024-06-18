@@ -22,7 +22,15 @@ namespace FileDB.Serialization
             public bool IsIndex {get;set;} = false;
             public string NameProperty {get;set;}
         }
-
+        public static Record[] SerializeArray<In>(In[] objectsIn)
+        {
+            var records = new Record[objectsIn.Length];
+            for(int index = 0; index < objectsIn.Length;index++)
+            {
+                records[index] = Serialize<In>(objectsIn[index]);
+            }
+            return records;
+        }
         public static Record Serialize<In>(In objectIn)
         {
             return FileSerializer.Serialize(objectIn, new FileSerializerOptions());
@@ -45,6 +53,16 @@ namespace FileDB.Serialization
             return builder.GetRecord();
 
         }
+        
+        public static Out[] DeserializeArray<Out>(Record[] recordsIn)
+        {
+            var objects = new Out[recordsIn.Length];
+            for (int index = 0; index < recordsIn.Length; index++)
+            {
+                objects[index] = Deserialize<Out>(recordsIn[index]);
+            }
+            return objects;
+        }
         public static Out Deserialize<Out>(Record recordIn)
         {
             Type type = typeof(Out);
@@ -62,6 +80,9 @@ namespace FileDB.Serialization
 
             if (constructorFull != null)
             {
+                if(length != recordIn.Length)
+                    throw new ArgumentOutOfRangeException(nameof(recordIn.Length));
+                    
                 var arguments = new object[length];
                 for(int index = 0;index < length; index++)
                     arguments[index] = recordIn[index].Value;

@@ -5,7 +5,7 @@ namespace FileDB.Core.Data.TypeField
     public class FieldLinkObject : AbstractRecordField
     {
         private RecordLink _link;
-        public FieldLinkObject(string nameIn, string pathIn, string numberIn) 
+        public FieldLinkObject(string nameIn, string pathIn) 
             : base(nameIn, false)
         {
             _link = new RecordLink(pathIn);      

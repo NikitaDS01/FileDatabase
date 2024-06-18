@@ -25,13 +25,14 @@ namespace FileDB.Core.Data.Tables
             _childTables = new Dictionary<string, Table>();
             _directoryTable = directoryIn;
             _name = propertyIn.NameTable;
-            _lastUpdate = propertyIn.LastUpdate;
+            _lastUpdate = propertyIn.LastUpdateTable;
             _isInit = false;
             _isRecordNameTable = propertyIn.IsNameTable;
         }
 
         #region Property
         
+        public DirectoryInfo DirectoryTable => _directoryTable;
         public FileInfo[] Files => _directoryTable.GetFiles("*.txt");
         public DirectoryInfo[] Directories => _directoryTable.GetDirectories();
         public PropertyTable Property => this.GetProperty();
@@ -41,7 +42,7 @@ namespace FileDB.Core.Data.Tables
         public FileInfo PropertyFileFBD => new FileInfo(FunctionFile.FullFileName(_directoryTable.FullName, 
                 _name, TypeFormat.TBL));
         public IReadOnlyCollection<Table> ChildTables => _childTables.Values;
-        public int CountRecord => Files.Length;
+        public int CountRecord => Files.Length - 1;
 
         #endregion
 
@@ -56,6 +57,7 @@ namespace FileDB.Core.Data.Tables
                 var writer = new WriterFileTxt(path);
                 string data = WriterData.Write(record);
                 writer.Write(data);
+                record.File = new FileInfo(path);
             }
             UpdatePropertyTable();
         }
@@ -136,11 +138,22 @@ namespace FileDB.Core.Data.Tables
             this.DeleteData(path);  
             UpdatePropertyTable();
         }
+        public bool ContainRecord(Record recordIn)
+        {
+            var path = this.GetNameFile(recordIn);
+            return System.IO.File.Exists(path);
+        }
+        public bool ContainRecord<In>(In recordIn)
+        {
+            var record = FileSerializer.Serialize(recordIn);
+            var path = this.GetNameFile(record);
+            return System.IO.File.Exists(path);
+        }
 
         #endregion
 
         #region ChangeTable PublicMethod
-        
+
         public bool TryGetTable(string nameIn, out Table? tableOut)
         {
             if(this.Name == nameIn)
@@ -172,7 +185,7 @@ namespace FileDB.Core.Data.Tables
         }
         public Table CreateChildTable(string nameIn)
         {
-            var property = new PropertyTable() {NameTable = nameIn};
+            var property = new PropertyTable() {NameTable = nameIn, IsNameTable = _isRecordNameTable };
             return this.CreateChildTable(property);
         }
         public Table CreateChildRecord<In>(In objectIn)
@@ -183,7 +196,8 @@ namespace FileDB.Core.Data.Tables
         public Table CreateChildRecord(Record recordIn)
         {
             var path = this.GetNameFile(recordIn);
-            var property = new PropertyTable{NameTable=System.IO.Path.GetFileName(path)};
+            var property = new PropertyTable{NameTable=System.IO.Path.GetFileNameWithoutExtension(path),
+                                             IsNameTable = _isRecordNameTable };
             return this.CreateChildTable(property);
         }
         public void Initialize()
@@ -204,6 +218,15 @@ namespace FileDB.Core.Data.Tables
                 table.Initialize();
             }
             _isInit = true;
+        }
+        public bool RemoveChildTable(string nameIn)
+        {
+            if(_childTables.ContainsKey(nameIn))
+            {
+                _childTables.Remove(nameIn);
+                return true;
+            }
+            return false;
         }
         
         #endregion
@@ -230,7 +253,7 @@ namespace FileDB.Core.Data.Tables
         private PropertyTable GetProperty()
         {
             var property = new PropertyTable { NameTable = _name,
-                LastUpdate = DateTime.Now, IsNameTable= _isRecordNameTable};
+                LastUpdateTable = DateTime.Now, IsNameTable= _isRecordNameTable};
             return property;
         }
         
@@ -239,12 +262,13 @@ namespace FileDB.Core.Data.Tables
             var writer = new WriterFileTxt(pathIn);
             string data = WriterData.Write(recordIn);
             writer.Write(data);
+            recordIn.File = new FileInfo(pathIn);
         }
         private Record ReadData(string pathIn)
         {
             var reader = new ReaderFileTxt(pathIn);
-            string data = reader.Read();
-            if(string.IsNullOrEmpty(data))
+            var data = reader.Read();
+            if(string.IsNullOrEmpty(data.Path.FullName))
                 throw new ArgumentNullException(nameof(pathIn));
             return ReaderData.Read(data);
         }
