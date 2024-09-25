@@ -1,37 +1,52 @@
 ﻿using FileDB.Core.Data;
+using FileDB.Core.Data.TypeField;
 
 namespace FileDB.Function
 {
     public class RecordBuilder
     {
-        private readonly List<Element> _elements;
+        private readonly List<AbstractRecordField> _elements;
+        private readonly List<RecordLink> _links;
+        private FileInfo? _fileRecord;
         public RecordBuilder()
         {
-            _elements = new List<Element>();
+            _fileRecord = null;
+            _elements = new List<AbstractRecordField>();
+            _links = new List<RecordLink>();
+        }
+        public void SetFile(FileInfo fileIn)
+        {
+            _fileRecord = fileIn;
+        }
+        public void Add(AbstractRecordField fieldIn)
+        {
+            _elements.Add(fieldIn);
         }
         public bool TryAdd(string name, object value)
         {
-            var type = ConvertEnum.ToValue(value.GetType());
-            if (type == TypeValue.None) 
+            return TryAdd(name, value,false);
+        }
+        public bool TryAdd(string name, object value,bool isIndex)
+        {
+            var type = value.GetType();
+            if(value == null)
+                return false;
+            if(!FunctionField.TypeIsDefault(type))
                 return false;
 
-            _elements.Add(new Element(name, type, value));
+            _elements.Add(FunctionField.ValueToField(name, value, isIndex));            
             return true;
         }
-        public bool TryAdd(string name, System.Type typeIn, object value)
+        public void AddLink(RecordLink linkIn)
         {
-            if (typeIn != value.GetType())
-                return false;
-            var type = ConvertEnum.ToValue(typeIn);
-            if (type == TypeValue.None )
-                return false;
-
-            _elements.Add(new Element(name, type, value));
-            return true;
+            _links.Add(linkIn);
         }
         public Record GetRecord()
-        {
-            return new Record(_elements.ToArray());
+        { 
+            var record = new Record(_fileRecord, _elements.ToArray());
+            for(int i =0; i < _links.Count; i++)
+                record.AddLink(_links[i]);
+            return record;
         }
     }
 }

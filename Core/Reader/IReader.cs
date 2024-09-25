@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using FileDB.Core.File;
 
 namespace FileDB.Core.Reader
 {
     public interface IReader
     {
-        string Read();
-        Task<string> ReadAsync();
+        DataFile Read();
+        Task<DataFile> ReadAsync();
     }
 }

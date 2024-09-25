@@ -1,37 +1,33 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using FileDB.Core.File;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace FileDB.Core.Reader
 {
     public class ReaderFileTxt : IReader
     {
-        private readonly string _path;
+        private readonly FileInfo _path;
         public ReaderFileTxt(FileInfo fileInfoIn)
         {
-            _path = fileInfoIn.FullName;
+            _path = fileInfoIn;
         }
         public ReaderFileTxt(string pathIn)
         {
             if (string.IsNullOrEmpty(pathIn))
                 throw new NullReferenceException(nameof(pathIn));
 
-            _path = pathIn;
+            _path = new FileInfo(pathIn);
         }
-        public string Read()
+        public DataFile Read()
         {
             FileStream? file = null;
             try
             {
-                file = new FileStream(_path, FileMode.Open, FileAccess.Read);
+                file = new FileStream(_path.FullName, FileMode.Open, FileAccess.Read);
                 byte[] buffer = new byte[file.Length];
 
                 file.Read(buffer, 0, buffer.Length);
 
-                return Encoding.Default.GetString(buffer);
+                return new DataFile(_path, Encoding.Default.GetString(buffer));
             }
             catch (Exception ex) 
             {
@@ -41,19 +37,19 @@ namespace FileDB.Core.Reader
             {
                 file?.Close();
             }
-            return string.Empty;
+            return DataFile.Empty;
         }
-        public async Task<string> ReadAsync()
+        public async Task<DataFile> ReadAsync()
         {
             FileStream? file = null;
             try
             {
-                file = new FileStream(_path, FileMode.Open, FileAccess.Read);
+                file = new FileStream(_path.FullName, FileMode.Open, FileAccess.Read);
                 byte[] buffer = new byte[file.Length];
 
                 await file.ReadAsync(buffer, 0, buffer.Length);
 
-                return Encoding.Default.GetString(buffer);
+                return new DataFile(_path, Encoding.Default.GetString(buffer));
             }
             catch (Exception ex)
             {
@@ -63,7 +59,7 @@ namespace FileDB.Core.Reader
             {
                 file?.Close();
             }
-            return string.Empty;
+            return DataFile.Empty;
         }
     }
 }

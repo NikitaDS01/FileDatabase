@@ -3,6 +3,7 @@
     public enum TypeFormat
     {
         TXT = 1,
-        FDB = 2
+        TBL = 2,
+        FDB = 4
     }
 }

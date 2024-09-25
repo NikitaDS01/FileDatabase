@@ -1,86 +1,231 @@
 ﻿using FileDB.Core.Data;
+using FileDB.Core.Data.Tables;
 using FileDB.Core.File;
 using FileDB.Core.Reader;
 using FileDB.Core.Writer;
 using FileDB.Function;
+using FileDB.Serialization;
+using System.IO;
+using System.Reflection;
+using System.Reflection.Metadata;
 
 namespace FileDB
 {
     public class FileDatabase
     {
-        public class SettingDatabase
+        public const string SETTING_TABLE = "*.tbl";
+        public const string SETTING_DATABASE = "*.fdb";
+        public class PropertyDatabase
         {
-            public string Path { get; set; } = string.Empty;
-        }
-
-        private readonly string _path;
-        private readonly DirectoryInfo _directory;
-        public FileDatabase(string path) : this(new SettingDatabase { Path = path }) 
-        { }
-
-        public FileDatabase(SettingDatabase settingIn)
-        {
-            if(string.IsNullOrEmpty(settingIn.Path))
-                throw new NullReferenceException(nameof(settingIn.Path));
-
-            _path = settingIn.Path;
-            if(!ExistsDatabase)
-                throw new FileNotFoundException(nameof(settingIn.Path));
-
-            _directory = new DirectoryInfo(_path);
-        }
-
-        public bool ExistsDatabase => Directory.Exists(_path);
-        public string[] PathDirectories => Directory.GetDirectories(_path);
-        public string[] PathFiles => Directory.GetFiles(_path);
-        public string[] PathDirectoriesAndFiles => Directory.GetFileSystemEntries(_path);
-        public FileInfo[] Files => _directory.GetFiles();
-        public DirectoryInfo[] Directories => _directory.GetDirectories();
-
-        public FileInfo? TryFindFile(string nameFileIn, TypeFormat formatIn = TypeFormat.TXT)
-        {
-            string findFile = FunctionFile.FileName(nameFileIn, formatIn);
-            foreach(FileInfo file in Files)
+            public string NameDatabase { get; set; } = string.Empty;
+            public DateTime CreateDatabase { get; set; } = DateTime.Now;
+            public PropertyDatabase()
             {
-                if(file.Name == findFile)
-                    return file;
+                NameDatabase = string.Empty;
+                CreateDatabase = DateTime.Now;
             }
+            public PropertyDatabase(string nameDatabase, DateTime createDatabase)
+            {
+                NameDatabase = nameDatabase;
+                CreateDatabase = createDatabase;
+            }
+        }
+
+        private string _name;
+        private DateTime _createDateTime;
+        private DirectoryInfo _databaseDirectory;
+        private Dictionary<string, Table> _rootTables;
+        private bool _isLoadDatabase;
+
+        public FileDatabase(DirectoryInfo directoryIn)
+        {
+            _isLoadDatabase = false;
+            _rootTables = new Dictionary<string, Table>();
+            _databaseDirectory = directoryIn;
+        }
+
+        public string Name => _name;
+        public Table this[string name] => _rootTables[name];
+        public string Path => _databaseDirectory.FullName;
+        public IReadOnlyCollection<Table> RootTables => _rootTables.Values;
+        public DateTime CreateDateTime => _createDateTime;
+
+        public Table GetRootTable(string tableNameIn)
+        {
+            if (!ContainRootTable(tableNameIn))
+                throw new ArgumentNullException(nameof(tableNameIn));
+            return _rootTables[tableNameIn];
+        }
+        public bool ContainTable(string nameIn)
+        {
+            Table table;
+            foreach(var root in RootTables)
+            {
+                if(root.TryGetTable(nameIn, out table!))
+                    return true;
+            }
+            return false;
+        } 
+        public bool TryGetTable(string nameIn, out Table? tableOut)
+        {
+            tableOut = null;
+            foreach(var root in RootTables)
+            {
+                if(root.TryGetTable(nameIn, out tableOut))
+                    return true;
+            }
+            return false;
+        }
+        public bool ContainRootTable(string nameIn)
+        {
+            return _rootTables.ContainsKey(nameIn);
+        }
+        public Table CreateRootTable(string nameIn)
+        {
+            var property = new PropertyTable() {NameTable = nameIn};
+            return this.CreateRootTable(property);
+        }
+        public Table CreateRootTable(PropertyTable propertyIn)
+        {
+            if(string.IsNullOrEmpty(propertyIn.NameTable))
+                throw new ArgumentNullException(nameof(propertyIn.NameTable));
+
+            DirectoryInfo info = _databaseDirectory.CreateSubdirectory(propertyIn.NameTable);
+            Record record = FileSerializer.Serialize<PropertyTable>(propertyIn);
+            this.WriteData(FunctionFile.FullFileName(info.FullName, 
+                propertyIn.NameTable, TypeFormat.TBL), record);
+            
+            var table = new Table(info, propertyIn);
+            _rootTables.Add(table.Name, table);
+            return table;
+        }
+        public void CreateDatabase(PropertyDatabase settingIn)
+        {
+            if (string.IsNullOrEmpty(settingIn.NameDatabase))
+                throw new ArgumentNullException(nameof(_name));
+            if (_isLoadDatabase == true)
+                throw new Exception("База уже создана");
+
+            _databaseDirectory.Create();
+            settingIn.CreateDatabase = DateTime.Now;
+            this.SetProperty(settingIn);
+            this.SetFileDatabase();
+
+            _isLoadDatabase = true;
+        }
+        public void Initialize()
+        {
+            if(_isLoadDatabase)
+                throw new Exception("Таблица уже создана");
+
+            PropertyDatabase propertyDB = this.GetFileDatabase();
+            this.SetProperty(propertyDB);
+
+            DirectoryInfo[] directoryTables = _databaseDirectory.GetDirectories();
+            FileInfo[] files = this.GetFileTable(directoryTables);
+            foreach(var file in files)
+            {
+                if(file == null)
+                    throw new ArgumentNullException(nameof(file));
+
+                var record = this.ReadData(file.FullName);
+                var property = FileSerializer.Deserialize<PropertyTable>(record);
+                var table = new Table(file.Directory!, property);
+                _rootTables.Add(property.NameTable, table);
+                table.Initialize();
+            }
+            _isLoadDatabase = true;
+        }
+
+        public Record[] SelectRecord(string recordIn)
+        {
+            FileInfo[] files = _databaseDirectory.GetFiles("*.txt", SearchOption.AllDirectories);
+            int count = 0;
+            List<Record> list = new List<Record>();
+            for (int index = 0; index < files.Length; index++)
+            {
+                var reader = new ReaderFileTxt(files[index].FullName);
+                var data = reader.Read();
+                if (data.Coding.Contains(recordIn))
+                    list.Add(this.ReadData(files[index].FullName));
+            }
+            return list.ToArray();
+        }
+
+        /// <summary>
+        /// Возвращает запись, по ссылочной записи
+        /// </summary>
+        /// <param name="linkIn">Запись с ссылкой</param>
+        /// <returns>Если запись существует, то возвращает её, иначе null</returns>
+        public Record? LinkRecord(RecordLink linkIn)
+        {
+            if(File.Exists(linkIn.FullName))
+                return ReadData(linkIn.FullName);
             return null;
         }
-        public DirectoryInfo? TryFindDirectory(string nameDirectoryIn)
+        
+        private FileInfo[] GetFileTable(DirectoryInfo[] directories)
         {
-            foreach (DirectoryInfo directory in Directories)
+            var files = new FileInfo[directories.Length];
+            for(int index = 0; index < directories.Length;index++)
             {
-                if (directory.Name == nameDirectoryIn)
-                    return directory;
+                var directory = directories[index];
+                var tmp = directory.GetFiles(SETTING_TABLE, SearchOption.TopDirectoryOnly);
+                files[index] = tmp.First();
             }
-            return null;
+            return files;
         }
-        public Record ReadData(string typeIn, string nameIn, TypeFormat formatIn)
+        private Record ReadData(string pathIn)
         {
-            return this.ReadData(new NameRecord(typeIn, nameIn, formatIn));
-        }
-        public Record ReadData(NameRecord nameFileIn)
-        {
-            string path = _path + '\\' + nameFileIn.GetName();
-            var reader = new ReaderFileTxt(path);
-            string data = reader.Read();
-            if (string.IsNullOrEmpty(data))
-                throw new NullReferenceException(nameof(path));
-
+            var reader = new ReaderFileTxt(pathIn);
+            var data = reader.Read();
+            if(string.IsNullOrEmpty(data.Coding))
+                throw new ArgumentNullException(nameof(pathIn));
             return ReaderData.Read(data);
         }
-        public void WriteData(string typeIn, string nameIn, TypeFormat formatIn, Record recordIn)
+        private void WriteData(string pathIn, Record recordIn)
         {
-            this.WriteData(new NameRecord(typeIn, nameIn, formatIn), recordIn);
-        }
-        public void WriteData(NameRecord nameFileIn, Record recordIn)
-        {
-            string path = _path + '\\' + nameFileIn.GetName();
+            var writer = new WriterFileTxt(pathIn);
             string data = WriterData.Write(recordIn);
+            writer.Write(data);
+        }
+        private void AppendData(string pathIn, string value)
+        {
+            var writer = new AppendFileText(pathIn);
+            writer.Write(value);
+        }
+        private PropertyDatabase GetFileDatabase()
+        {
+            FileInfo[] info = _databaseDirectory.GetFiles(
+                SETTING_DATABASE, SearchOption.TopDirectoryOnly);
+            if (info.Length == 0)
+                throw new Exception("Файл базы данных не найден");
 
-            var reader = new WriterFileTxt(path);
-            reader.Write(data);
+            var file = info.First();
+            Record record = this.ReadData(file.FullName);
+            PropertyDatabase property = FileSerializer.Deserialize<PropertyDatabase>(record);
+            return property;
+        }        
+        private void SetFileDatabase()
+        {
+            var property = this.GetProperty();
+            var record = FileSerializer.Serialize<PropertyDatabase>(property);
+            this.WriteData(FunctionFile.FullFileName(_databaseDirectory.FullName,
+                property.NameDatabase, TypeFormat.FDB), record);
+        }
+        private PropertyDatabase GetProperty()
+        {
+            var property = new PropertyDatabase
+            {
+                NameDatabase = _name,
+                CreateDatabase = DateTime.Now
+            };
+            return property;
+        }
+        private void SetProperty(PropertyDatabase propertyIn)
+        {
+            _name = propertyIn.NameDatabase;
+            _createDateTime = propertyIn.CreateDatabase;
         }
     }
 }
